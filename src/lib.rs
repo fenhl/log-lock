@@ -41,7 +41,7 @@ use {
                 line!(),
                 column!(),
             );
-            $crate::util::sync::MutexGuard(guard)
+            $crate::MutexGuard(guard)
         }
     }};
     (@read $rw_lock:expr) => {{
@@ -71,7 +71,7 @@ use {
                 line!(),
                 column!(),
             );
-            $crate::util::sync::RwLockReadGuard(guard)
+            $crate::RwLockReadGuard(guard)
         }
     }};
     (@write $rw_lock:expr) => {{
@@ -101,7 +101,7 @@ use {
                 line!(),
                 column!(),
             );
-            $crate::util::sync::RwLockWriteGuard(guard)
+            $crate::RwLockWriteGuard(guard)
         }
     }};
     (@write_owned $rw_lock:expr) => {{
@@ -131,7 +131,7 @@ use {
                 line!(),
                 column!(),
             );
-            $crate::util::sync::OwnedRwLockWriteGuard(guard)
+            $crate::OwnedRwLockWriteGuard(guard)
         }
     }};
 }
