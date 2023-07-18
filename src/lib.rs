@@ -44,6 +44,24 @@ use {
             $crate::MutexGuard(guard)
         }
     }};
+    (@blocking $mutex:expr) => {{
+        #[allow(unused_qualifications)] {
+            #[cfg(debug_assertions)] println!(
+                "[{} {}:{}] synchronously acquiring mutex guard",
+                file!(),
+                line!(),
+                column!(),
+            );
+            let guard = $mutex.0.blocking_lock();
+            #[cfg(debug_assertions)] println!(
+                "[{} {}:{}] mutex guard acquired synchronously",
+                file!(),
+                line!(),
+                column!(),
+            );
+            $crate::MutexGuard(guard)
+        }
+    }};
     (@read $rw_lock:expr) => {{
         #[allow(unused_qualifications)] {
             #[cfg(debug_assertions)] println!(
@@ -67,6 +85,27 @@ use {
             };
             #[cfg(debug_assertions)] println!(
                 "[{} {}:{}] RwLock read guard acquired",
+                file!(),
+                line!(),
+                column!(),
+            );
+            $crate::RwLockReadGuard(guard)
+        }
+    }};
+    (@read @blocking $rw_lock:expr) => {
+        $crate::lock!(@blocking @read $rw_lock)
+    };
+    (@blocking @read $rw_lock:expr) => {{
+        #[allow(unused_qualifications)] {
+            #[cfg(debug_assertions)] println!(
+                "[{} {}:{}] synchronously acquiring RwLock read guard",
+                file!(),
+                line!(),
+                column!(),
+            );
+            let guard = $rw_lock.0.blocking_read();
+            #[cfg(debug_assertions)] println!(
+                "[{} {}:{}] RwLock read guard acquired synchronously",
                 file!(),
                 line!(),
                 column!(),
@@ -104,7 +143,31 @@ use {
             $crate::RwLockWriteGuard(guard)
         }
     }};
-    (@write_owned $rw_lock:expr) => {{
+    (@write @blocking $rw_lock:expr) => {
+        $crate::lock!(@blocking @write $rw_lock)
+    };
+    (@blocking @write $rw_lock:expr) => {{
+        #[allow(unused_qualifications)] {
+            #[cfg(debug_assertions)] println!(
+                "[{} {}:{}] synchronously acquiring RwLock write guard",
+                file!(),
+                line!(),
+                column!(),
+            );
+            let guard = $rw_lock.0.blocking_write();
+            #[cfg(debug_assertions)] println!(
+                "[{} {}:{}] RwLock write guard acquired synchronously",
+                file!(),
+                line!(),
+                column!(),
+            );
+            $crate::RwLockWriteGuard(guard)
+        }
+    }};
+    (@owned @write $rw_lock:expr) => {
+        $crate::lock!(@write @owned $rw_lock)
+    };
+    (@write @owned $rw_lock:expr) => {{
         #[allow(unused_qualifications)] {
             #[cfg(debug_assertions)] println!(
                 "[{} {}:{}] acquiring owned RwLock write guard",
