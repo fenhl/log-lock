@@ -270,7 +270,7 @@ impl<T: ?Sized> DerefMut for RwLockWriteGuard<'_, T> {
     }
 }
 
-#[derive(Derivative)]
+#[derive(Derivative, Default)]
 #[derivative(Clone(bound = ""))]
 pub struct ArcRwLock<T: ?Sized>(pub Arc<tokio::sync::RwLock<T>>);
 
