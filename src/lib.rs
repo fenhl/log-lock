@@ -77,7 +77,7 @@ use {
                 std::line!(),
                 std::column!(),
             );
-            $crate::MutexGuard(guard)
+            $crate::ParkingLotMutexGuard(guard)
         }
     }};
     (@read $rw_lock:expr) => {{
