@@ -62,6 +62,24 @@ use {
             $crate::MutexGuard(guard)
         }
     }};
+    (@sync $mutex:expr) => {{
+        #[allow(unused_qualifications)] {
+            #[cfg(debug_assertions)] std::println!(
+                "[{} {}:{}] acquiring parking_lot mutex guard",
+                std::file!(),
+                std::line!(),
+                std::column!(),
+            );
+            let guard = $mutex.0.lock();
+            #[cfg(debug_assertions)] std::println!(
+                "[{} {}:{}] parking_lot mutex guard acquired",
+                std::file!(),
+                std::line!(),
+                std::column!(),
+            );
+            $crate::MutexGuard(guard)
+        }
+    }};
     (@read $rw_lock:expr) => {{
         #[allow(unused_qualifications)] {
             #[cfg(debug_assertions)] std::println!(
@@ -229,6 +247,38 @@ impl<T: ?Sized> DerefMut for MutexGuard<'_, T> {
         println!("dropping mutex guard");
     }
 }
+
+#[derive(Debug, Default)]
+pub struct ParkingLotMutex<T: ?Sized>(pub parking_lot::Mutex<T>);
+
+impl<T> ParkingLotMutex<T> {
+    pub fn new(t: T) -> Self {
+        Self(parking_lot::Mutex::new(t))
+    }
+
+    pub fn into_inner(self) -> T {
+        self.0.into_inner()
+    }
+}
+
+pub struct ParkingLotMutexGuard<'a, T: ?Sized>(pub parking_lot::MutexGuard<'a, T>);
+
+impl<T: ?Sized> Deref for ParkingLotMutexGuard<'_, T> {
+    type Target = T;
+
+    fn deref(&self) -> &T { &self.0 }
+}
+
+impl<T: ?Sized> DerefMut for ParkingLotMutexGuard<'_, T> {
+    fn deref_mut(&mut self) -> &mut T { &mut self.0 }
+}
+
+#[cfg(debug_assertions)] impl<T: ?Sized> Drop for ParkingLotMutexGuard<'_, T> {
+    fn drop(&mut self) {
+        println!("dropping parking_lot mutex guard");
+    }
+}
+
 
 pub struct RwLock<T: ?Sized>(pub tokio::sync::RwLock<T>);
 
