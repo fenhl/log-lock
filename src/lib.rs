@@ -70,7 +70,18 @@ use {
                 std::line!(),
                 std::column!(),
             );
-            let guard = $mutex.0.lock();
+            let mutex = $mutex;
+            let guard = if let Some(guard) = mutex.0.try_lock_for(std::time::Duration::from_secs(60)) {
+                guard
+            } else {
+                std::eprintln!(
+                    "[{} {}:{}] warning: acquiring parking_lot mutex guard taking over a minute",
+                    std::file!(),
+                    std::line!(),
+                    std::column!(),
+                );
+                mutex.0.lock()
+            };
             #[cfg(debug_assertions)] std::println!(
                 "[{} {}:{}] parking_lot mutex guard acquired",
                 std::file!(),
