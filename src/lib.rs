@@ -70,7 +70,7 @@ use {
                 std::line!(),
                 std::column!(),
             );
-            let mutex = $mutex;
+            let mutex = &$mutex;
             let guard = if let Some(guard) = mutex.0.try_lock_for(std::time::Duration::from_secs(60)) {
                 guard
             } else {
