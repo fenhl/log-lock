@@ -9,8 +9,8 @@ use {
 
 #[cfg(any(debug_assertions, feature = "always-log"))]
 #[macro_export] macro_rules! lock {
-    ($(mut)? $guard:ident = $mutex:expr; $expr:expr) => {{
-        #[allow(unused_qualifications)] {
+    ($guard:ident = $mutex:expr; $expr:expr) => {{
+        #[allow(unused_mut, unused_qualifications)] {
             std::println!(
                 "[{} {}:{}] acquiring mutex guard",
                 std::file!(),
@@ -18,7 +18,7 @@ use {
                 std::column!(),
             );
             let mut guard_fut = std::pin::pin!($mutex.0.lock());
-            let $(mut)? $guard = tokio::select! {
+            let mut $guard = tokio::select! {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
                     std::eprintln!(
@@ -47,15 +47,15 @@ use {
             value
         }
     }};
-    (@blocking $(mut)? $guard:ident = $mutex:expr; $expr:expr) => {{
-        #[allow(unused_qualifications)] {
+    (@blocking $guard:ident = $mutex:expr; $expr:expr) => {{
+        #[allow(unused_mut, unused_qualifications)] {
             std::println!(
                 "[{} {}:{}] synchronously acquiring mutex guard",
                 std::file!(),
                 std::line!(),
                 std::column!(),
             );
-            let $(mut)? $guard = $mutex.0.blocking_lock();
+            let mut $guard = $mutex.0.blocking_lock();
             std::println!(
                 "[{} {}:{}] mutex guard acquired synchronously",
                 std::file!(),
@@ -73,8 +73,8 @@ use {
             value
         }
     }};
-    (@sync $(mut)? $guard:ident = $mutex:expr; $expr:expr) => {{
-        #[allow(unused_qualifications)] {
+    (@sync $guard:ident = $mutex:expr; $expr:expr) => {{
+        #[allow(unused_mut, unused_qualifications)] {
             std::println!(
                 "[{} {}:{}] acquiring parking_lot mutex guard",
                 std::file!(),
@@ -82,7 +82,7 @@ use {
                 std::column!(),
             );
             let mutex = &$mutex;
-            let $(mut)? $guard = if let Some(guard) = mutex.0.try_lock_for(std::time::Duration::from_secs(60)) {
+            let mut $guard = if let Some(guard) = mutex.0.try_lock_for(std::time::Duration::from_secs(60)) {
                 guard
             } else {
                 std::eprintln!(
@@ -110,8 +110,8 @@ use {
             value
         }
     }};
-    (@read $(mut)? $guard:ident = $rw_lock:expr; $expr:expr) => {{
-        #[allow(unused_qualifications)] {
+    (@read $guard:ident = $rw_lock:expr; $expr:expr) => {{
+        #[allow(unused_mut, unused_qualifications)] {
             std::println!(
                 "[{} {}:{}] acquiring RwLock read guard",
                 std::file!(),
@@ -119,7 +119,7 @@ use {
                 std::column!(),
             );
             let mut guard_fut = std::pin::pin!($rw_lock.0.read());
-            let $(mut)? $guard = tokio::select! {
+            let mut $guard = tokio::select! {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
                     std::eprintln!(
@@ -148,18 +148,18 @@ use {
             value
         }
     }};
-    (@read @blocking $(mut)? $guard:ident = $rw_lock:expr; $expr:expr) => {
-        $crate::lock!(@blocking @read $(mut)? $guard = $rw_lock; $expr)
+    (@read @blocking $guard:ident = $rw_lock:expr; $expr:expr) => {
+        $crate::lock!(@blocking @read $guard = $rw_lock; $expr)
     };
-    (@blocking @read $(mut)? $guard:ident = $rw_lock:expr; $expr:expr) => {{
-        #[allow(unused_qualifications)] {
+    (@blocking @read $guard:ident = $rw_lock:expr; $expr:expr) => {{
+        #[allow(unused_mut, unused_qualifications)] {
             std::println!(
                 "[{} {}:{}] synchronously acquiring RwLock read guard",
                 std::file!(),
                 std::line!(),
                 std::column!(),
             );
-            let $(mut)? $guard = $rw_lock.0.blocking_read();
+            let mut $guard = $rw_lock.0.blocking_read();
             std::println!(
                 "[{} {}:{}] RwLock read guard acquired synchronously",
                 std::file!(),
@@ -177,8 +177,8 @@ use {
             value
         }
     }};
-    (@write $(mut)? $guard:ident = $rw_lock:expr; $expr:expr) => {{
-        #[allow(unused_qualifications)] {
+    (@write $guard:ident = $rw_lock:expr; $expr:expr) => {{
+        #[allow(unused_mut, unused_qualifications)] {
             std::println!(
                 "[{} {}:{}] acquiring RwLock write guard",
                 std::file!(),
@@ -186,7 +186,7 @@ use {
                 std::column!(),
             );
             let mut guard_fut = std::pin::pin!($rw_lock.0.write());
-            let $(mut)? $guard = tokio::select! {
+            let mut $guard = tokio::select! {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
                     std::eprintln!(
@@ -215,18 +215,18 @@ use {
             value
         }
     }};
-    (@write @blocking $(mut)? $guard:ident = $rw_lock:expr; $expr:expr) => {
-        $crate::lock!(@blocking @write $(mut)? $guard = $rw_lock; $expr)
+    (@write @blocking $guard:ident = $rw_lock:expr; $expr:expr) => {
+        $crate::lock!(@blocking @write $guard = $rw_lock; $expr)
     };
-    (@blocking @write $(mut)? $guard:ident = $rw_lock:expr; $expr:expr) => {{
-        #[allow(unused_qualifications)] {
+    (@blocking @write $guard:ident = $rw_lock:expr; $expr:expr) => {{
+        #[allow(unused_mut, unused_qualifications)] {
             std::println!(
                 "[{} {}:{}] synchronously acquiring RwLock write guard",
                 std::file!(),
                 std::line!(),
                 std::column!(),
             );
-            let $(mut)? $guard = $rw_lock.0.blocking_write();
+            let mut $guard = $rw_lock.0.blocking_write();
             std::println!(
                 "[{} {}:{}] RwLock write guard acquired synchronously",
                 std::file!(),
@@ -244,11 +244,11 @@ use {
             value
         }
     }};
-    (@owned @write $(mut)? $guard:ident = $rw_lock:expr; $expr:expr) => {
-        $crate::lock!(@write @owned $(mut)? $guard = $rw_lock; $expr)
+    (@owned @write $guard:ident = $rw_lock:expr; $expr:expr) => {
+        $crate::lock!(@write @owned $guard = $rw_lock; $expr)
     };
-    (@write @owned $(mut)? $guard:ident = $rw_lock:expr; $expr:expr) => {{
-        #[allow(unused_qualifications)] {
+    (@write @owned $guard:ident = $rw_lock:expr; $expr:expr) => {{
+        #[allow(unused_mut, unused_qualifications)] {
             std::println!(
                 "[{} {}:{}] acquiring owned RwLock write guard",
                 std::file!(),
@@ -256,7 +256,7 @@ use {
                 std::column!(),
             );
             let mut guard_fut = std::pin::pin!($rw_lock.0.write_owned());
-            let $(mut)? $guard = tokio::select! {
+            let mut $guard = tokio::select! {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
                     std::eprintln!(
@@ -289,10 +289,10 @@ use {
 
 #[cfg(not(any(debug_assertions, feature = "always-log")))]
 #[macro_export] macro_rules! lock {
-    ($(mut)? $guard:ident = $mutex:expr; $expr:expr) => {{
-        #[allow(unused_qualifications)] {
+    ($guard:ident = $mutex:expr; $expr:expr) => {{
+        #[allow(unused_mut, unused_qualifications)] {
             let mut guard_fut = std::pin::pin!($mutex.0.lock());
-            let $(mut)? $guard = tokio::select! {
+            let mut $guard = tokio::select! {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
                     std::eprintln!(
@@ -309,18 +309,18 @@ use {
             value
         }
     }};
-    (@blocking $(mut)? $guard:ident = $mutex:expr; $expr:expr) => {{
-        #[allow(unused_qualifications)] {
-            let $(mut)? $guard = $mutex.0.blocking_lock();
+    (@blocking $guard:ident = $mutex:expr; $expr:expr) => {{
+        #[allow(unused_mut, unused_qualifications)] {
+            let mut $guard = $mutex.0.blocking_lock();
             let value = $expr;
             drop($guard);
             value
         }
     }};
-    (@sync $(mut)? $guard:ident = $mutex:expr; $expr:expr) => {{
-        #[allow(unused_qualifications)] {
+    (@sync $guard:ident = $mutex:expr; $expr:expr) => {{
+        #[allow(unused_mut, unused_qualifications)] {
             let mutex = &$mutex;
-            let $(mut)? $guard = if let Some(guard) = mutex.0.try_lock_for(std::time::Duration::from_secs(60)) {
+            let mut $guard = if let Some(guard) = mutex.0.try_lock_for(std::time::Duration::from_secs(60)) {
                 guard
             } else {
                 std::eprintln!(
@@ -336,10 +336,10 @@ use {
             value
         }
     }};
-    (@read $(mut)? $guard:ident = $rw_lock:expr; $expr:expr) => {{
-        #[allow(unused_qualifications)] {
+    (@read $guard:ident = $rw_lock:expr; $expr:expr) => {{
+        #[allow(unused_mut, unused_qualifications)] {
             let mut guard_fut = std::pin::pin!($rw_lock.0.read());
-            let $(mut)? $guard = tokio::select! {
+            let mut $guard = tokio::select! {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
                     std::eprintln!(
@@ -356,21 +356,21 @@ use {
             value
         }
     }};
-    (@read @blocking $(mut)? $guard:ident = $rw_lock:expr; $expr:expr) => {
-        $crate::lock!(@blocking @read $(mut)? $guard = $rw_lock; $expr)
+    (@read @blocking $guard:ident = $rw_lock:expr; $expr:expr) => {
+        $crate::lock!(@blocking @read $guard = $rw_lock; $expr)
     };
-    (@blocking @read $(mut)? $guard:ident = $rw_lock:expr; $expr:expr) => {{
-        #[allow(unused_qualifications)] {
-            let $(mut)? $guard = $rw_lock.0.blocking_read();
+    (@blocking @read $guard:ident = $rw_lock:expr; $expr:expr) => {{
+        #[allow(unused_mut, unused_qualifications)] {
+            let mut $guard = $rw_lock.0.blocking_read();
             let value = $expr;
             drop($guard);
             value
         }
     }};
-    (@write $(mut)? $guard:ident = $rw_lock:expr; $expr:expr) => {{
-        #[allow(unused_qualifications)] {
+    (@write $guard:ident = $rw_lock:expr; $expr:expr) => {{
+        #[allow(unused_mut, unused_qualifications)] {
             let mut guard_fut = std::pin::pin!($rw_lock.0.write());
-            let $(mut)? $guard = tokio::select! {
+            let mut $guard = tokio::select! {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
                     std::eprintln!(
@@ -387,24 +387,24 @@ use {
             value
         }
     }};
-    (@write @blocking $(mut)? $guard:ident = $rw_lock:expr; $expr:expr) => {
-        $crate::lock!(@blocking @write $(mut)? $guard = $rw_lock; $expr)
+    (@write @blocking $guard:ident = $rw_lock:expr; $expr:expr) => {
+        $crate::lock!(@blocking @write $guard = $rw_lock; $expr)
     };
-    (@blocking @write $(mut)? $guard:ident = $rw_lock:expr; $expr:expr) => {{
-        #[allow(unused_qualifications)] {
-            let $(mut)? $guard = $rw_lock.0.blocking_write();
+    (@blocking @write $guard:ident = $rw_lock:expr; $expr:expr) => {{
+        #[allow(unused_mut, unused_qualifications)] {
+            let mut $guard = $rw_lock.0.blocking_write();
             let value = $expr;
             drop($guard);
             value
         }
     }};
-    (@owned @write $(mut)? $guard:ident = $rw_lock:expr; $expr:expr) => {
-        $crate::lock!(@write @owned $(mut)? $guard = $rw_lock; $expr)
+    (@owned @write $guard:ident = $rw_lock:expr; $expr:expr) => {
+        $crate::lock!(@write @owned $guard = $rw_lock; $expr)
     };
-    (@write @owned $(mut)? $guard:ident = $rw_lock:expr; $expr:expr) => {{
-        #[allow(unused_qualifications)] {
+    (@write @owned $guard:ident = $rw_lock:expr; $expr:expr) => {{
+        #[allow(unused_mut, unused_qualifications)] {
             let mut guard_fut = std::pin::pin!($rw_lock.0.write_owned());
-            let $(mut)? $guard = tokio::select! {
+            let mut $guard = tokio::select! {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
                     std::eprintln!(
