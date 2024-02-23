@@ -375,8 +375,14 @@ impl<T: ?Sized> DerefMut for MutexGuard<'_, T> {
 }
 
 #[cfg(any(debug_assertions, feature = "always-log"))] impl<T: ?Sized> Drop for MutexGuard<'_, T> {
+    #[track_caller]
     fn drop(&mut self) {
-        println!("dropping mutex guard");
+        println!(
+            "[{} {}:{}] dropping mutex guard",
+            std::file!(),
+            std::line!(),
+            std::column!(),
+        );
     }
 }
 
@@ -406,8 +412,14 @@ impl<T: ?Sized> DerefMut for ParkingLotMutexGuard<'_, T> {
 }
 
 #[cfg(any(debug_assertions, feature = "always-log"))] impl<T: ?Sized> Drop for ParkingLotMutexGuard<'_, T> {
+    #[track_caller]
     fn drop(&mut self) {
-        println!("dropping parking_lot mutex guard");
+        println!(
+            "[{} {}:{}] dropping parking_lot mutex guard",
+            std::file!(),
+            std::line!(),
+            std::column!(),
+        );
     }
 }
 
@@ -429,8 +441,14 @@ impl<T: ?Sized> Deref for RwLockReadGuard<'_, T> {
 }
 
 #[cfg(any(debug_assertions, feature = "always-log"))] impl<T: ?Sized> Drop for RwLockReadGuard<'_, T> {
+    #[track_caller]
     fn drop(&mut self) {
-        println!("dropping RwLock read guard");
+        println!(
+            "[{} {}:{}] dropping RwLock read guard",
+            std::file!(),
+            std::line!(),
+            std::column!(),
+        );
     }
 }
 
@@ -447,8 +465,14 @@ impl<T: ?Sized> DerefMut for RwLockWriteGuard<'_, T> {
 }
 
 #[cfg(any(debug_assertions, feature = "always-log"))] impl<T: ?Sized> Drop for RwLockWriteGuard<'_, T> {
+    #[track_caller]
     fn drop(&mut self) {
-        println!("dropping RwLock write guard");
+        println!(
+            "[{} {}:{}] dropping RwLock write guard",
+            std::file!(),
+            std::line!(),
+            std::column!(),
+        );
     }
 }
 
@@ -481,7 +505,13 @@ impl<T: ?Sized> DerefMut for OwnedRwLockWriteGuard<T> {
 }
 
 #[cfg(any(debug_assertions, feature = "always-log"))] impl<T: ?Sized> Drop for OwnedRwLockWriteGuard<T> {
+    #[track_caller]
     fn drop(&mut self) {
-        println!("dropping owned RwLock write guard");
+        println!(
+            "[{} {}:{}] dropping owned RwLock write guard",
+            std::file!(),
+            std::line!(),
+            std::column!(),
+        );
     }
 }
