@@ -16,7 +16,7 @@ use {
 #[macro_export] macro_rules! lock {
     ($mutex:expr) => {{
         #[allow(unused_qualifications)] {
-            #[cfg(debug_assertions)] std::println!(
+            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
                 "[{} {}:{}] acquiring mutex guard",
                 std::file!(),
                 std::line!(),
@@ -35,7 +35,7 @@ use {
                     guard_fut.await
                 }
             };
-            #[cfg(debug_assertions)] std::println!(
+            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
                 "[{} {}:{}] mutex guard acquired",
                 std::file!(),
                 std::line!(),
@@ -46,14 +46,14 @@ use {
     }};
     (@blocking $mutex:expr) => {{
         #[allow(unused_qualifications)] {
-            #[cfg(debug_assertions)] std::println!(
+            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
                 "[{} {}:{}] synchronously acquiring mutex guard",
                 std::file!(),
                 std::line!(),
                 std::column!(),
             );
             let guard = $mutex.0.blocking_lock();
-            #[cfg(debug_assertions)] std::println!(
+            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
                 "[{} {}:{}] mutex guard acquired synchronously",
                 std::file!(),
                 std::line!(),
@@ -64,7 +64,7 @@ use {
     }};
     (@sync $mutex:expr) => {{
         #[allow(unused_qualifications)] {
-            #[cfg(debug_assertions)] std::println!(
+            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
                 "[{} {}:{}] acquiring parking_lot mutex guard",
                 std::file!(),
                 std::line!(),
@@ -82,7 +82,7 @@ use {
                 );
                 mutex.0.lock()
             };
-            #[cfg(debug_assertions)] std::println!(
+            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
                 "[{} {}:{}] parking_lot mutex guard acquired",
                 std::file!(),
                 std::line!(),
@@ -93,7 +93,7 @@ use {
     }};
     (@read $rw_lock:expr) => {{
         #[allow(unused_qualifications)] {
-            #[cfg(debug_assertions)] std::println!(
+            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
                 "[{} {}:{}] acquiring RwLock read guard",
                 std::file!(),
                 std::line!(),
@@ -112,7 +112,7 @@ use {
                     guard_fut.await
                 }
             };
-            #[cfg(debug_assertions)] std::println!(
+            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
                 "[{} {}:{}] RwLock read guard acquired",
                 std::file!(),
                 std::line!(),
@@ -126,14 +126,14 @@ use {
     };
     (@blocking @read $rw_lock:expr) => {{
         #[allow(unused_qualifications)] {
-            #[cfg(debug_assertions)] std::println!(
+            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
                 "[{} {}:{}] synchronously acquiring RwLock read guard",
                 std::file!(),
                 std::line!(),
                 std::column!(),
             );
             let guard = $rw_lock.0.blocking_read();
-            #[cfg(debug_assertions)] std::println!(
+            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
                 "[{} {}:{}] RwLock read guard acquired synchronously",
                 std::file!(),
                 std::line!(),
@@ -144,7 +144,7 @@ use {
     }};
     (@write $rw_lock:expr) => {{
         #[allow(unused_qualifications)] {
-            #[cfg(debug_assertions)] std::println!(
+            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
                 "[{} {}:{}] acquiring RwLock write guard",
                 std::file!(),
                 std::line!(),
@@ -163,7 +163,7 @@ use {
                     guard_fut.await
                 }
             };
-            #[cfg(debug_assertions)] std::println!(
+            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
                 "[{} {}:{}] RwLock write guard acquired",
                 std::file!(),
                 std::line!(),
@@ -177,14 +177,14 @@ use {
     };
     (@blocking @write $rw_lock:expr) => {{
         #[allow(unused_qualifications)] {
-            #[cfg(debug_assertions)] std::println!(
+            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
                 "[{} {}:{}] synchronously acquiring RwLock write guard",
                 std::file!(),
                 std::line!(),
                 std::column!(),
             );
             let guard = $rw_lock.0.blocking_write();
-            #[cfg(debug_assertions)] std::println!(
+            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
                 "[{} {}:{}] RwLock write guard acquired synchronously",
                 std::file!(),
                 std::line!(),
@@ -198,7 +198,7 @@ use {
     };
     (@write @owned $rw_lock:expr) => {{
         #[allow(unused_qualifications)] {
-            #[cfg(debug_assertions)] std::println!(
+            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
                 "[{} {}:{}] acquiring owned RwLock write guard",
                 std::file!(),
                 std::line!(),
@@ -217,7 +217,7 @@ use {
                     guard_fut.await
                 }
             };
-            #[cfg(debug_assertions)] std::println!(
+            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
                 "[{} {}:{}] owned RwLock write guard acquired",
                 std::file!(),
                 std::line!(),
@@ -253,7 +253,7 @@ impl<T: ?Sized> DerefMut for MutexGuard<'_, T> {
     fn deref_mut(&mut self) -> &mut T { &mut self.0 }
 }
 
-#[cfg(debug_assertions)] impl<T: ?Sized> Drop for MutexGuard<'_, T> {
+#[cfg(any(debug_assertions, feature = "always-log"))] impl<T: ?Sized> Drop for MutexGuard<'_, T> {
     fn drop(&mut self) {
         println!("dropping mutex guard");
     }
@@ -284,7 +284,7 @@ impl<T: ?Sized> DerefMut for ParkingLotMutexGuard<'_, T> {
     fn deref_mut(&mut self) -> &mut T { &mut self.0 }
 }
 
-#[cfg(debug_assertions)] impl<T: ?Sized> Drop for ParkingLotMutexGuard<'_, T> {
+#[cfg(any(debug_assertions, feature = "always-log"))] impl<T: ?Sized> Drop for ParkingLotMutexGuard<'_, T> {
     fn drop(&mut self) {
         println!("dropping parking_lot mutex guard");
     }
@@ -307,7 +307,7 @@ impl<T: ?Sized> Deref for RwLockReadGuard<'_, T> {
     fn deref(&self) -> &T { &self.0 }
 }
 
-#[cfg(debug_assertions)] impl<T: ?Sized> Drop for RwLockReadGuard<'_, T> {
+#[cfg(any(debug_assertions, feature = "always-log"))] impl<T: ?Sized> Drop for RwLockReadGuard<'_, T> {
     fn drop(&mut self) {
         println!("dropping RwLock read guard");
     }
@@ -325,7 +325,7 @@ impl<T: ?Sized> DerefMut for RwLockWriteGuard<'_, T> {
     fn deref_mut(&mut self) -> &mut T { &mut self.0 }
 }
 
-#[cfg(debug_assertions)] impl<T: ?Sized> Drop for RwLockWriteGuard<'_, T> {
+#[cfg(any(debug_assertions, feature = "always-log"))] impl<T: ?Sized> Drop for RwLockWriteGuard<'_, T> {
     fn drop(&mut self) {
         println!("dropping RwLock write guard");
     }
@@ -359,7 +359,7 @@ impl<T: ?Sized> DerefMut for OwnedRwLockWriteGuard<T> {
     fn deref_mut(&mut self) -> &mut T { &mut self.0 }
 }
 
-#[cfg(debug_assertions)] impl<T: ?Sized> Drop for OwnedRwLockWriteGuard<T> {
+#[cfg(any(debug_assertions, feature = "always-log"))] impl<T: ?Sized> Drop for OwnedRwLockWriteGuard<T> {
     fn drop(&mut self) {
         println!("dropping owned RwLock write guard");
     }
