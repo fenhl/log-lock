@@ -13,10 +13,11 @@ use {
     derivative::Derivative,
 };
 
+#[cfg(any(debug_assertions, feature = "always-log"))]
 #[macro_export] macro_rules! lock {
     ($mutex:expr) => {{
         #[allow(unused_qualifications)] {
-            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
+            std::println!(
                 "[{} {}:{}] acquiring mutex guard",
                 std::file!(),
                 std::line!(),
@@ -35,7 +36,7 @@ use {
                     guard_fut.await
                 }
             };
-            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
+            std::println!(
                 "[{} {}:{}] mutex guard acquired",
                 std::file!(),
                 std::line!(),
@@ -46,14 +47,14 @@ use {
     }};
     (@blocking $mutex:expr) => {{
         #[allow(unused_qualifications)] {
-            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
+            std::println!(
                 "[{} {}:{}] synchronously acquiring mutex guard",
                 std::file!(),
                 std::line!(),
                 std::column!(),
             );
             let guard = $mutex.0.blocking_lock();
-            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
+            std::println!(
                 "[{} {}:{}] mutex guard acquired synchronously",
                 std::file!(),
                 std::line!(),
@@ -64,7 +65,7 @@ use {
     }};
     (@sync $mutex:expr) => {{
         #[allow(unused_qualifications)] {
-            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
+            std::println!(
                 "[{} {}:{}] acquiring parking_lot mutex guard",
                 std::file!(),
                 std::line!(),
@@ -82,7 +83,7 @@ use {
                 );
                 mutex.0.lock()
             };
-            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
+            std::println!(
                 "[{} {}:{}] parking_lot mutex guard acquired",
                 std::file!(),
                 std::line!(),
@@ -93,7 +94,7 @@ use {
     }};
     (@read $rw_lock:expr) => {{
         #[allow(unused_qualifications)] {
-            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
+            std::println!(
                 "[{} {}:{}] acquiring RwLock read guard",
                 std::file!(),
                 std::line!(),
@@ -112,7 +113,7 @@ use {
                     guard_fut.await
                 }
             };
-            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
+            std::println!(
                 "[{} {}:{}] RwLock read guard acquired",
                 std::file!(),
                 std::line!(),
@@ -126,14 +127,14 @@ use {
     };
     (@blocking @read $rw_lock:expr) => {{
         #[allow(unused_qualifications)] {
-            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
+            std::println!(
                 "[{} {}:{}] synchronously acquiring RwLock read guard",
                 std::file!(),
                 std::line!(),
                 std::column!(),
             );
             let guard = $rw_lock.0.blocking_read();
-            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
+            std::println!(
                 "[{} {}:{}] RwLock read guard acquired synchronously",
                 std::file!(),
                 std::line!(),
@@ -144,7 +145,7 @@ use {
     }};
     (@write $rw_lock:expr) => {{
         #[allow(unused_qualifications)] {
-            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
+            std::println!(
                 "[{} {}:{}] acquiring RwLock write guard",
                 std::file!(),
                 std::line!(),
@@ -163,7 +164,7 @@ use {
                     guard_fut.await
                 }
             };
-            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
+            std::println!(
                 "[{} {}:{}] RwLock write guard acquired",
                 std::file!(),
                 std::line!(),
@@ -177,14 +178,14 @@ use {
     };
     (@blocking @write $rw_lock:expr) => {{
         #[allow(unused_qualifications)] {
-            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
+            std::println!(
                 "[{} {}:{}] synchronously acquiring RwLock write guard",
                 std::file!(),
                 std::line!(),
                 std::column!(),
             );
             let guard = $rw_lock.0.blocking_write();
-            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
+            std::println!(
                 "[{} {}:{}] RwLock write guard acquired synchronously",
                 std::file!(),
                 std::line!(),
@@ -198,7 +199,7 @@ use {
     };
     (@write @owned $rw_lock:expr) => {{
         #[allow(unused_qualifications)] {
-            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
+            std::println!(
                 "[{} {}:{}] acquiring owned RwLock write guard",
                 std::file!(),
                 std::line!(),
@@ -217,12 +218,132 @@ use {
                     guard_fut.await
                 }
             };
-            #[cfg(any(debug_assertions, feature = "always-log"))] std::println!(
+            std::println!(
                 "[{} {}:{}] owned RwLock write guard acquired",
                 std::file!(),
                 std::line!(),
                 std::column!(),
             );
+            $crate::OwnedRwLockWriteGuard(guard)
+        }
+    }};
+}
+
+#[cfg(not(any(debug_assertions, feature = "always-log")))]
+#[macro_export] macro_rules! lock {
+    ($mutex:expr) => {{
+        #[allow(unused_qualifications)] {
+            let mut guard_fut = std::pin::pin!($mutex.0.lock());
+            let guard = tokio::select! {
+                guard = &mut guard_fut => guard,
+                () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
+                    std::eprintln!(
+                        "[{} {}:{}] warning: acquiring mutex guard taking over a minute",
+                        std::file!(),
+                        std::line!(),
+                        std::column!(),
+                    );
+                    guard_fut.await
+                }
+            };
+            $crate::MutexGuard(guard)
+        }
+    }};
+    (@blocking $mutex:expr) => {{
+        #[allow(unused_qualifications)] {
+            let guard = $mutex.0.blocking_lock();
+            $crate::MutexGuard(guard)
+        }
+    }};
+    (@sync $mutex:expr) => {{
+        #[allow(unused_qualifications)] {
+            let mutex = &$mutex;
+            let guard = if let Some(guard) = mutex.0.try_lock_for(std::time::Duration::from_secs(60)) {
+                guard
+            } else {
+                std::eprintln!(
+                    "[{} {}:{}] warning: acquiring parking_lot mutex guard taking over a minute",
+                    std::file!(),
+                    std::line!(),
+                    std::column!(),
+                );
+                mutex.0.lock()
+            };
+            $crate::ParkingLotMutexGuard(guard)
+        }
+    }};
+    (@read $rw_lock:expr) => {{
+        #[allow(unused_qualifications)] {
+            let mut guard_fut = std::pin::pin!($rw_lock.0.read());
+            let guard = tokio::select! {
+                guard = &mut guard_fut => guard,
+                () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
+                    std::eprintln!(
+                        "[{} {}:{}] warning: acquiring RwLock read guard taking over a minute",
+                        std::file!(),
+                        std::line!(),
+                        std::column!(),
+                    );
+                    guard_fut.await
+                }
+            };
+            $crate::RwLockReadGuard(guard)
+        }
+    }};
+    (@read @blocking $rw_lock:expr) => {
+        $crate::lock!(@blocking @read $rw_lock)
+    };
+    (@blocking @read $rw_lock:expr) => {{
+        #[allow(unused_qualifications)] {
+            let guard = $rw_lock.0.blocking_read();
+            $crate::RwLockReadGuard(guard)
+        }
+    }};
+    (@write $rw_lock:expr) => {{
+        #[allow(unused_qualifications)] {
+            let mut guard_fut = std::pin::pin!($rw_lock.0.write());
+            let guard = tokio::select! {
+                guard = &mut guard_fut => guard,
+                () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
+                    std::eprintln!(
+                        "[{} {}:{}] warning: acquiring RwLock write guard taking over a minute",
+                        std::file!(),
+                        std::line!(),
+                        std::column!(),
+                    );
+                    guard_fut.await
+                }
+            };
+            $crate::RwLockWriteGuard(guard)
+        }
+    }};
+    (@write @blocking $rw_lock:expr) => {
+        $crate::lock!(@blocking @write $rw_lock)
+    };
+    (@blocking @write $rw_lock:expr) => {{
+        #[allow(unused_qualifications)] {
+            let guard = $rw_lock.0.blocking_write();
+            $crate::RwLockWriteGuard(guard)
+        }
+    }};
+    (@owned @write $rw_lock:expr) => {
+        $crate::lock!(@write @owned $rw_lock)
+    };
+    (@write @owned $rw_lock:expr) => {{
+        #[allow(unused_qualifications)] {
+            let mut guard_fut = std::pin::pin!($rw_lock.0.write_owned());
+            let guard = tokio::select! {
+                guard = &mut guard_fut => guard,
+                () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
+                    std::eprintln!(
+                        "[{} {}:{}] warning: acquiring owned RwLock write guard taking over a minute",
+                        std::file!(),
+                        std::line!(),
+                        std::column!(),
+                    );
+                    guard_fut.await
+                }
+            };
             $crate::OwnedRwLockWriteGuard(guard)
         }
     }};
