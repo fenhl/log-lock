@@ -3,19 +3,13 @@
 #![forbid(unsafe_code)]
 
 use {
-    std::{
-        ops::{
-            Deref,
-            DerefMut,
-        },
-        sync::Arc,
-    },
+    std::sync::Arc,
     derivative::Derivative,
 };
 
 #[cfg(any(debug_assertions, feature = "always-log"))]
 #[macro_export] macro_rules! lock {
-    ($mutex:expr) => {{
+    ($guard:ident = $mutex:expr; $expr:expr) => {{
         #[allow(unused_qualifications)] {
             std::println!(
                 "[{} {}:{}] acquiring mutex guard",
@@ -24,7 +18,7 @@ use {
                 std::column!(),
             );
             let mut guard_fut = std::pin::pin!($mutex.0.lock());
-            let guard = tokio::select! {
+            let $guard = tokio::select! {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
                     std::eprintln!(
@@ -42,10 +36,18 @@ use {
                 std::line!(),
                 std::column!(),
             );
-            $crate::MutexGuard(guard)
+            let value = $expr;
+            std::println!(
+                "[{} {}:{}] dropping mutex guard",
+                std::file!(),
+                std::line!(),
+                std::column!(),
+            );
+            drop($guard);
+            value
         }
     }};
-    (@blocking $mutex:expr) => {{
+    (@blocking $guard:ident = $mutex:expr; $expr:expr) => {{
         #[allow(unused_qualifications)] {
             std::println!(
                 "[{} {}:{}] synchronously acquiring mutex guard",
@@ -53,17 +55,25 @@ use {
                 std::line!(),
                 std::column!(),
             );
-            let guard = $mutex.0.blocking_lock();
+            let $guard = $mutex.0.blocking_lock();
             std::println!(
                 "[{} {}:{}] mutex guard acquired synchronously",
                 std::file!(),
                 std::line!(),
                 std::column!(),
             );
-            $crate::MutexGuard(guard)
+            let value = $expr;
+            std::println!(
+                "[{} {}:{}] dropping mutex guard",
+                std::file!(),
+                std::line!(),
+                std::column!(),
+            );
+            drop($guard);
+            value
         }
     }};
-    (@sync $mutex:expr) => {{
+    (@sync $guard:ident = $mutex:expr; $expr:expr) => {{
         #[allow(unused_qualifications)] {
             std::println!(
                 "[{} {}:{}] acquiring parking_lot mutex guard",
@@ -72,7 +82,7 @@ use {
                 std::column!(),
             );
             let mutex = &$mutex;
-            let guard = if let Some(guard) = mutex.0.try_lock_for(std::time::Duration::from_secs(60)) {
+            let $guard = if let Some(guard) = mutex.0.try_lock_for(std::time::Duration::from_secs(60)) {
                 guard
             } else {
                 std::eprintln!(
@@ -89,10 +99,18 @@ use {
                 std::line!(),
                 std::column!(),
             );
-            $crate::ParkingLotMutexGuard(guard)
+            let value = $expr;
+            std::println!(
+                "[{} {}:{}] dropping parking_lot mutex guard",
+                std::file!(),
+                std::line!(),
+                std::column!(),
+            );
+            drop($guard);
+            value
         }
     }};
-    (@read $rw_lock:expr) => {{
+    (@read $guard:ident = $rw_lock:expr; $expr:expr) => {{
         #[allow(unused_qualifications)] {
             std::println!(
                 "[{} {}:{}] acquiring RwLock read guard",
@@ -101,7 +119,7 @@ use {
                 std::column!(),
             );
             let mut guard_fut = std::pin::pin!($rw_lock.0.read());
-            let guard = tokio::select! {
+            let $guard = tokio::select! {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
                     std::eprintln!(
@@ -119,13 +137,21 @@ use {
                 std::line!(),
                 std::column!(),
             );
-            $crate::RwLockReadGuard(guard)
+            let value = $expr;
+            std::println!(
+                "[{} {}:{}] dropping RwLock read guard",
+                std::file!(),
+                std::line!(),
+                std::column!(),
+            );
+            drop($guard);
+            value
         }
     }};
-    (@read @blocking $rw_lock:expr) => {
-        $crate::lock!(@blocking @read $rw_lock)
+    (@read @blocking $guard:ident = $rw_lock:expr; $expr:expr) => {
+        $crate::lock!(@blocking @read $guard = $rw_lock; $expr)
     };
-    (@blocking @read $rw_lock:expr) => {{
+    (@blocking @read $guard:ident = $rw_lock:expr; $expr:expr) => {{
         #[allow(unused_qualifications)] {
             std::println!(
                 "[{} {}:{}] synchronously acquiring RwLock read guard",
@@ -133,17 +159,25 @@ use {
                 std::line!(),
                 std::column!(),
             );
-            let guard = $rw_lock.0.blocking_read();
+            let $guard = $rw_lock.0.blocking_read();
             std::println!(
                 "[{} {}:{}] RwLock read guard acquired synchronously",
                 std::file!(),
                 std::line!(),
                 std::column!(),
             );
-            $crate::RwLockReadGuard(guard)
+            let value = $expr;
+            std::println!(
+                "[{} {}:{}] dropping RwLock read guard",
+                std::file!(),
+                std::line!(),
+                std::column!(),
+            );
+            drop($guard);
+            value
         }
     }};
-    (@write $rw_lock:expr) => {{
+    (@write $guard:ident = $rw_lock:expr; $expr:expr) => {{
         #[allow(unused_qualifications)] {
             std::println!(
                 "[{} {}:{}] acquiring RwLock write guard",
@@ -152,7 +186,7 @@ use {
                 std::column!(),
             );
             let mut guard_fut = std::pin::pin!($rw_lock.0.write());
-            let guard = tokio::select! {
+            let $guard = tokio::select! {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
                     std::eprintln!(
@@ -170,13 +204,21 @@ use {
                 std::line!(),
                 std::column!(),
             );
-            $crate::RwLockWriteGuard(guard)
+            let value = $expr;
+            std::println!(
+                "[{} {}:{}] dropping RwLock write guard",
+                std::file!(),
+                std::line!(),
+                std::column!(),
+            );
+            drop($guard);
+            value
         }
     }};
-    (@write @blocking $rw_lock:expr) => {
-        $crate::lock!(@blocking @write $rw_lock)
+    (@write @blocking $guard:ident = $rw_lock:expr; $expr:expr) => {
+        $crate::lock!(@blocking @write $guard = $rw_lock; $expr)
     };
-    (@blocking @write $rw_lock:expr) => {{
+    (@blocking @write $guard:ident = $rw_lock:expr; $expr:expr) => {{
         #[allow(unused_qualifications)] {
             std::println!(
                 "[{} {}:{}] synchronously acquiring RwLock write guard",
@@ -184,20 +226,28 @@ use {
                 std::line!(),
                 std::column!(),
             );
-            let guard = $rw_lock.0.blocking_write();
+            let $guard = $rw_lock.0.blocking_write();
             std::println!(
                 "[{} {}:{}] RwLock write guard acquired synchronously",
                 std::file!(),
                 std::line!(),
                 std::column!(),
             );
-            $crate::RwLockWriteGuard(guard)
+            let value = $expr;
+            std::println!(
+                "[{} {}:{}] dropping RwLock write guard",
+                std::file!(),
+                std::line!(),
+                std::column!(),
+            );
+            drop($guard);
+            value
         }
     }};
-    (@owned @write $rw_lock:expr) => {
-        $crate::lock!(@write @owned $rw_lock)
+    (@owned @write $guard:ident = $rw_lock:expr; $expr:expr) => {
+        $crate::lock!(@write @owned $guard = $rw_lock; $expr)
     };
-    (@write @owned $rw_lock:expr) => {{
+    (@write @owned $guard:ident = $rw_lock:expr; $expr:expr) => {{
         #[allow(unused_qualifications)] {
             std::println!(
                 "[{} {}:{}] acquiring owned RwLock write guard",
@@ -206,7 +256,7 @@ use {
                 std::column!(),
             );
             let mut guard_fut = std::pin::pin!($rw_lock.0.write_owned());
-            let guard = tokio::select! {
+            let $guard = tokio::select! {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
                     std::eprintln!(
@@ -224,17 +274,25 @@ use {
                 std::line!(),
                 std::column!(),
             );
-            $crate::OwnedRwLockWriteGuard(guard)
+            let value = $expr;
+            std::println!(
+                "[{} {}:{}] dropping owned RwLock write guard",
+                std::file!(),
+                std::line!(),
+                std::column!(),
+            );
+            drop($guard);
+            value
         }
     }};
 }
 
 #[cfg(not(any(debug_assertions, feature = "always-log")))]
 #[macro_export] macro_rules! lock {
-    ($mutex:expr) => {{
+    ($guard:ident = $mutex:expr; $expr:expr) => {{
         #[allow(unused_qualifications)] {
             let mut guard_fut = std::pin::pin!($mutex.0.lock());
-            let guard = tokio::select! {
+            let $guard = tokio::select! {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
                     std::eprintln!(
@@ -246,19 +304,23 @@ use {
                     guard_fut.await
                 }
             };
-            $crate::MutexGuard(guard)
+            let value = $expr;
+            drop($guard);
+            value
         }
     }};
-    (@blocking $mutex:expr) => {{
+    (@blocking $guard:ident = $mutex:expr; $expr:expr) => {{
         #[allow(unused_qualifications)] {
-            let guard = $mutex.0.blocking_lock();
-            $crate::MutexGuard(guard)
+            let $guard = $mutex.0.blocking_lock();
+            let value = $expr;
+            drop($guard);
+            value
         }
     }};
-    (@sync $mutex:expr) => {{
+    (@sync $guard:ident = $mutex:expr; $expr:expr) => {{
         #[allow(unused_qualifications)] {
             let mutex = &$mutex;
-            let guard = if let Some(guard) = mutex.0.try_lock_for(std::time::Duration::from_secs(60)) {
+            let $guard = if let Some(guard) = mutex.0.try_lock_for(std::time::Duration::from_secs(60)) {
                 guard
             } else {
                 std::eprintln!(
@@ -269,13 +331,15 @@ use {
                 );
                 mutex.0.lock()
             };
-            $crate::ParkingLotMutexGuard(guard)
+            let value = $expr;
+            drop($guard);
+            value
         }
     }};
-    (@read $rw_lock:expr) => {{
+    (@read $guard:ident = $rw_lock:expr; $expr:expr) => {{
         #[allow(unused_qualifications)] {
             let mut guard_fut = std::pin::pin!($rw_lock.0.read());
-            let guard = tokio::select! {
+            let $guard = tokio::select! {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
                     std::eprintln!(
@@ -287,22 +351,26 @@ use {
                     guard_fut.await
                 }
             };
-            $crate::RwLockReadGuard(guard)
+            let value = $expr;
+            drop($guard);
+            value
         }
     }};
-    (@read @blocking $rw_lock:expr) => {
-        $crate::lock!(@blocking @read $rw_lock)
+    (@read @blocking $guard:ident = $rw_lock:expr; $expr:expr) => {
+        $crate::lock!(@blocking @read $guard = $rw_lock; $expr)
     };
-    (@blocking @read $rw_lock:expr) => {{
+    (@blocking @read $guard:ident = $rw_lock:expr; $expr:expr) => {{
         #[allow(unused_qualifications)] {
-            let guard = $rw_lock.0.blocking_read();
-            $crate::RwLockReadGuard(guard)
+            let $guard = $rw_lock.0.blocking_read();
+            let value = $expr;
+            drop($guard);
+            value
         }
     }};
-    (@write $rw_lock:expr) => {{
+    (@write $guard:ident = $rw_lock:expr; $expr:expr) => {{
         #[allow(unused_qualifications)] {
             let mut guard_fut = std::pin::pin!($rw_lock.0.write());
-            let guard = tokio::select! {
+            let $guard = tokio::select! {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
                     std::eprintln!(
@@ -314,25 +382,29 @@ use {
                     guard_fut.await
                 }
             };
-            $crate::RwLockWriteGuard(guard)
+            let value = $expr;
+            drop($guard);
+            value
         }
     }};
-    (@write @blocking $rw_lock:expr) => {
-        $crate::lock!(@blocking @write $rw_lock)
+    (@write @blocking $guard:ident = $rw_lock:expr; $expr:expr) => {
+        $crate::lock!(@blocking @write $guard = $rw_lock; $expr)
     };
-    (@blocking @write $rw_lock:expr) => {{
+    (@blocking @write $guard:ident = $rw_lock:expr; $expr:expr) => {{
         #[allow(unused_qualifications)] {
-            let guard = $rw_lock.0.blocking_write();
-            $crate::RwLockWriteGuard(guard)
+            let $guard = $rw_lock.0.blocking_write();
+            let value = $expr;
+            drop($guard);
+            value
         }
     }};
-    (@owned @write $rw_lock:expr) => {
-        $crate::lock!(@write @owned $rw_lock)
+    (@owned @write $guard:ident = $rw_lock:expr; $expr:expr) => {
+        $crate::lock!(@write @owned $guard = $rw_lock; $expr)
     };
-    (@write @owned $rw_lock:expr) => {{
+    (@write @owned $guard:ident = $rw_lock:expr; $expr:expr) => {{
         #[allow(unused_qualifications)] {
             let mut guard_fut = std::pin::pin!($rw_lock.0.write_owned());
-            let guard = tokio::select! {
+            let $guard = tokio::select! {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
                     std::eprintln!(
@@ -344,7 +416,9 @@ use {
                     guard_fut.await
                 }
             };
-            $crate::OwnedRwLockWriteGuard(guard)
+            let value = $expr;
+            drop($guard);
+            value
         }
     }};
 }
@@ -362,30 +436,6 @@ impl<T> Mutex<T> {
     }
 }
 
-pub struct MutexGuard<'a, T: ?Sized>(pub tokio::sync::MutexGuard<'a, T>);
-
-impl<T: ?Sized> Deref for MutexGuard<'_, T> {
-    type Target = T;
-
-    fn deref(&self) -> &T { &self.0 }
-}
-
-impl<T: ?Sized> DerefMut for MutexGuard<'_, T> {
-    fn deref_mut(&mut self) -> &mut T { &mut self.0 }
-}
-
-#[cfg(any(debug_assertions, feature = "always-log"))] impl<T: ?Sized> Drop for MutexGuard<'_, T> {
-    #[track_caller]
-    fn drop(&mut self) {
-        println!(
-            "[{} {}:{}] dropping mutex guard",
-            std::file!(),
-            std::line!(),
-            std::column!(),
-        );
-    }
-}
-
 #[derive(Debug, Default)]
 pub struct ParkingLotMutex<T: ?Sized>(pub parking_lot::Mutex<T>);
 
@@ -399,80 +449,11 @@ impl<T> ParkingLotMutex<T> {
     }
 }
 
-pub struct ParkingLotMutexGuard<'a, T: ?Sized>(pub parking_lot::MutexGuard<'a, T>);
-
-impl<T: ?Sized> Deref for ParkingLotMutexGuard<'_, T> {
-    type Target = T;
-
-    fn deref(&self) -> &T { &self.0 }
-}
-
-impl<T: ?Sized> DerefMut for ParkingLotMutexGuard<'_, T> {
-    fn deref_mut(&mut self) -> &mut T { &mut self.0 }
-}
-
-#[cfg(any(debug_assertions, feature = "always-log"))] impl<T: ?Sized> Drop for ParkingLotMutexGuard<'_, T> {
-    #[track_caller]
-    fn drop(&mut self) {
-        println!(
-            "[{} {}:{}] dropping parking_lot mutex guard",
-            std::file!(),
-            std::line!(),
-            std::column!(),
-        );
-    }
-}
-
-
 pub struct RwLock<T: ?Sized>(pub tokio::sync::RwLock<T>);
 
 impl<T> RwLock<T> {
     pub fn new(t: T) -> Self {
         Self(tokio::sync::RwLock::new(t))
-    }
-}
-
-pub struct RwLockReadGuard<'a, T: ?Sized>(pub tokio::sync::RwLockReadGuard<'a, T>);
-
-impl<T: ?Sized> Deref for RwLockReadGuard<'_, T> {
-    type Target = T;
-
-    fn deref(&self) -> &T { &self.0 }
-}
-
-#[cfg(any(debug_assertions, feature = "always-log"))] impl<T: ?Sized> Drop for RwLockReadGuard<'_, T> {
-    #[track_caller]
-    fn drop(&mut self) {
-        println!(
-            "[{} {}:{}] dropping RwLock read guard",
-            std::file!(),
-            std::line!(),
-            std::column!(),
-        );
-    }
-}
-
-pub struct RwLockWriteGuard<'a, T: ?Sized>(pub tokio::sync::RwLockWriteGuard<'a, T>);
-
-impl<T: ?Sized> Deref for RwLockWriteGuard<'_, T> {
-    type Target = T;
-
-    fn deref(&self) -> &T { &self.0 }
-}
-
-impl<T: ?Sized> DerefMut for RwLockWriteGuard<'_, T> {
-    fn deref_mut(&mut self) -> &mut T { &mut self.0 }
-}
-
-#[cfg(any(debug_assertions, feature = "always-log"))] impl<T: ?Sized> Drop for RwLockWriteGuard<'_, T> {
-    #[track_caller]
-    fn drop(&mut self) {
-        println!(
-            "[{} {}:{}] dropping RwLock write guard",
-            std::file!(),
-            std::line!(),
-            std::column!(),
-        );
     }
 }
 
@@ -489,29 +470,5 @@ impl<T> ArcRwLock<T> {
 impl<T> From<Arc<tokio::sync::RwLock<T>>> for ArcRwLock<T> {
     fn from(value: Arc<tokio::sync::RwLock<T>>) -> Self {
         Self(value)
-    }
-}
-
-pub struct OwnedRwLockWriteGuard<T: ?Sized>(pub tokio::sync::OwnedRwLockWriteGuard<T>);
-
-impl<T: ?Sized> Deref for OwnedRwLockWriteGuard<T> {
-    type Target = T;
-
-    fn deref(&self) -> &T { &self.0 }
-}
-
-impl<T: ?Sized> DerefMut for OwnedRwLockWriteGuard<T> {
-    fn deref_mut(&mut self) -> &mut T { &mut self.0 }
-}
-
-#[cfg(any(debug_assertions, feature = "always-log"))] impl<T: ?Sized> Drop for OwnedRwLockWriteGuard<T> {
-    #[track_caller]
-    fn drop(&mut self) {
-        println!(
-            "[{} {}:{}] dropping owned RwLock write guard",
-            std::file!(),
-            std::line!(),
-            std::column!(),
-        );
     }
 }
