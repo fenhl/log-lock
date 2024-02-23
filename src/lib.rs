@@ -36,6 +36,19 @@ use {
                 std::line!(),
                 std::column!(),
             );
+
+            macro_rules! unlock {
+                () => {
+                    std::println!(
+                        "[{} {}:{}] dropping mutex guard",
+                        std::file!(),
+                        std::line!(),
+                        std::column!(),
+                    );
+                    drop($guard);
+                }
+            }
+
             let value = $expr;
             std::println!(
                 "[{} {}:{}] dropping mutex guard",
@@ -62,6 +75,19 @@ use {
                 std::line!(),
                 std::column!(),
             );
+
+            macro_rules! unlock {
+                () => {
+                    std::println!(
+                        "[{} {}:{}] dropping mutex guard",
+                        std::file!(),
+                        std::line!(),
+                        std::column!(),
+                    );
+                    drop($guard);
+                }
+            }
+
             let value = $expr;
             std::println!(
                 "[{} {}:{}] dropping mutex guard",
@@ -99,6 +125,19 @@ use {
                 std::line!(),
                 std::column!(),
             );
+
+            macro_rules! unlock {
+                () => {
+                    std::println!(
+                        "[{} {}:{}] dropping parking_lot mutex guard",
+                        std::file!(),
+                        std::line!(),
+                        std::column!(),
+                    );
+                    drop($guard);
+                }
+            }
+
             let value = $expr;
             std::println!(
                 "[{} {}:{}] dropping parking_lot mutex guard",
@@ -137,6 +176,19 @@ use {
                 std::line!(),
                 std::column!(),
             );
+
+            macro_rules! unlock {
+                () => {
+                    std::println!(
+                        "[{} {}:{}] dropping RwLock read guard",
+                        std::file!(),
+                        std::line!(),
+                        std::column!(),
+                    );
+                    drop($guard);
+                }
+            }
+
             let value = $expr;
             std::println!(
                 "[{} {}:{}] dropping RwLock read guard",
@@ -166,6 +218,19 @@ use {
                 std::line!(),
                 std::column!(),
             );
+
+            macro_rules! unlock {
+                () => {
+                    std::println!(
+                        "[{} {}:{}] dropping RwLock read guard",
+                        std::file!(),
+                        std::line!(),
+                        std::column!(),
+                    );
+                    drop($guard);
+                }
+            }
+
             let value = $expr;
             std::println!(
                 "[{} {}:{}] dropping RwLock read guard",
@@ -204,6 +269,19 @@ use {
                 std::line!(),
                 std::column!(),
             );
+
+            macro_rules! unlock {
+                () => {
+                    std::println!(
+                        "[{} {}:{}] dropping RwLock write guard",
+                        std::file!(),
+                        std::line!(),
+                        std::column!(),
+                    );
+                    drop($guard);
+                }
+            }
+
             let value = $expr;
             std::println!(
                 "[{} {}:{}] dropping RwLock write guard",
@@ -233,6 +311,19 @@ use {
                 std::line!(),
                 std::column!(),
             );
+
+            macro_rules! unlock {
+                () => {
+                    std::println!(
+                        "[{} {}:{}] dropping RwLock write guard",
+                        std::file!(),
+                        std::line!(),
+                        std::column!(),
+                    );
+                    drop($guard);
+                }
+            }
+
             let value = $expr;
             std::println!(
                 "[{} {}:{}] dropping RwLock write guard",
@@ -274,6 +365,19 @@ use {
                 std::line!(),
                 std::column!(),
             );
+
+            macro_rules! unlock {
+                () => {
+                    std::println!(
+                        "[{} {}:{}] dropping owned RwLock write guard",
+                        std::file!(),
+                        std::line!(),
+                        std::column!(),
+                    );
+                    drop($guard);
+                }
+            }
+
             let value = $expr;
             std::println!(
                 "[{} {}:{}] dropping owned RwLock write guard",
@@ -304,6 +408,13 @@ use {
                     guard_fut.await
                 }
             };
+
+            macro_rules! unlock {
+                () => {
+                    drop($guard);
+                }
+            }
+
             let value = $expr;
             drop($guard);
             value
@@ -312,6 +423,13 @@ use {
     (@blocking $guard:ident = $mutex:expr; $expr:expr) => {{
         #[allow(unused_mut, unused_qualifications)] {
             let mut $guard = $mutex.0.blocking_lock();
+
+            macro_rules! unlock {
+                () => {
+                    drop($guard);
+                }
+            }
+
             let value = $expr;
             drop($guard);
             value
@@ -331,6 +449,13 @@ use {
                 );
                 mutex.0.lock()
             };
+
+            macro_rules! unlock {
+                () => {
+                    drop($guard);
+                }
+            }
+
             let value = $expr;
             drop($guard);
             value
@@ -351,6 +476,13 @@ use {
                     guard_fut.await
                 }
             };
+
+            macro_rules! unlock {
+                () => {
+                    drop($guard);
+                }
+            }
+
             let value = $expr;
             drop($guard);
             value
@@ -362,6 +494,13 @@ use {
     (@blocking @read $guard:ident = $rw_lock:expr; $expr:expr) => {{
         #[allow(unused_mut, unused_qualifications)] {
             let mut $guard = $rw_lock.0.blocking_read();
+
+            macro_rules! unlock {
+                () => {
+                    drop($guard);
+                }
+            }
+
             let value = $expr;
             drop($guard);
             value
@@ -382,6 +521,13 @@ use {
                     guard_fut.await
                 }
             };
+
+            macro_rules! unlock {
+                () => {
+                    drop($guard);
+                }
+            }
+
             let value = $expr;
             drop($guard);
             value
@@ -393,6 +539,13 @@ use {
     (@blocking @write $guard:ident = $rw_lock:expr; $expr:expr) => {{
         #[allow(unused_mut, unused_qualifications)] {
             let mut $guard = $rw_lock.0.blocking_write();
+
+            macro_rules! unlock {
+                () => {
+                    drop($guard);
+                }
+            }
+
             let value = $expr;
             drop($guard);
             value
@@ -416,6 +569,13 @@ use {
                     guard_fut.await
                 }
             };
+
+            macro_rules! unlock {
+                () => {
+                    drop($guard);
+                }
+            }
+
             let value = $expr;
             drop($guard);
             value
