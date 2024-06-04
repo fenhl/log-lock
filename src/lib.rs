@@ -31,7 +31,7 @@ use {
                 }
             };
             std::println!(
-                "[{} {}:{}] mutex guard acquired",
+                "[{} {}:{}] acquired mutex guard",
                 std::file!(),
                 std::line!(),
                 std::column!(),
@@ -70,7 +70,7 @@ use {
             );
             let mut $guard = $mutex.0.blocking_lock();
             std::println!(
-                "[{} {}:{}] mutex guard acquired synchronously",
+                "[{} {}:{}] synchronously acquired mutex guard",
                 std::file!(),
                 std::line!(),
                 std::column!(),
@@ -120,7 +120,7 @@ use {
                 mutex.0.lock()
             };
             std::println!(
-                "[{} {}:{}] parking_lot mutex guard acquired",
+                "[{} {}:{}] acquired parking_lot mutex guard",
                 std::file!(),
                 std::line!(),
                 std::column!(),
@@ -171,7 +171,7 @@ use {
                 }
             };
             std::println!(
-                "[{} {}:{}] RwLock read guard acquired",
+                "[{} {}:{}] acquired RwLock read guard",
                 std::file!(),
                 std::line!(),
                 std::column!(),
@@ -213,7 +213,7 @@ use {
             );
             let mut $guard = $rw_lock.0.blocking_read();
             std::println!(
-                "[{} {}:{}] RwLock read guard acquired synchronously",
+                "[{} {}:{}] synchronously acquired RwLock read guard",
                 std::file!(),
                 std::line!(),
                 std::column!(),
@@ -264,7 +264,7 @@ use {
                 }
             };
             std::println!(
-                "[{} {}:{}] RwLock write guard acquired",
+                "[{} {}:{}] acquired RwLock write guard",
                 std::file!(),
                 std::line!(),
                 std::column!(),
@@ -306,7 +306,7 @@ use {
             );
             let mut $guard = $rw_lock.0.blocking_write();
             std::println!(
-                "[{} {}:{}] RwLock write guard acquired synchronously",
+                "[{} {}:{}] synchronously acquired RwLock write guard",
                 std::file!(),
                 std::line!(),
                 std::column!(),
@@ -360,7 +360,7 @@ use {
                 }
             };
             std::println!(
-                "[{} {}:{}] owned RwLock write guard acquired",
+                "[{} {}:{}] acquired owned RwLock write guard",
                 std::file!(),
                 std::line!(),
                 std::column!(),
