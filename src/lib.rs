@@ -609,7 +609,7 @@ impl<T> ParkingLotMutex<T> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct RwLock<T: ?Sized>(pub tokio::sync::RwLock<T>);
 
 impl<T> RwLock<T> {
