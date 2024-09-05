@@ -1,6 +1,6 @@
 [package]
 name = "log-lock"
-version = "0.2.3"
+version = "0.2.4"
 edition = "2021"
 
 [features]
@@ -9,4 +9,4 @@ always-log = []
 [dependencies]
 derivative = "2.2.0"
 parking_lot = "0.12.1"
-tokio = { version = "1.29.1", features = ["macros", "sync"] }
+tokio = { version = "1.29.1", features = ["macros", "sync", "time"] }
