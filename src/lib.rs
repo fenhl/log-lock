@@ -370,7 +370,7 @@ use {
         }
     }};
     (@write $guard:ident = $mutex:expr; $expr:expr) => {
-        $crate::lock!($guard = $mutex; format!("{} {}:{}", std::file!(), std::line!(), std::column!()); $expr)
+        $crate::lock!(@write $guard = $mutex; format!("{} {}:{}", std::file!(), std::line!(), std::column!()); $expr)
     };
     (@write $guard:ident = $mutex:expr; $ctx:expr; $expr:expr) => {{
         #[allow(unused_macros, unused_mut, unused_qualifications)] {
@@ -402,7 +402,7 @@ use {
         $crate::lock!(@blocking @write $guard = $mutex; $ctx; $expr)
     };
     (@blocking @write $guard:ident = $mutex:expr; $expr:expr) => {
-        $crate::lock!($guard = $mutex; format!("{} {}:{}", std::file!(), std::line!(), std::column!()); $expr)
+        $crate::lock!(@blocking @write $guard = $mutex; format!("{} {}:{}", std::file!(), std::line!(), std::column!()); $expr)
     };
     (@blocking @write $guard:ident = $mutex:expr; $ctx:expr; $expr:expr) => {{
         #[allow(unused_macros, unused_mut, unused_qualifications)] {
