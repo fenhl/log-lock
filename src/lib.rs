@@ -504,3 +504,95 @@ impl<T> From<Arc<tokio::sync::RwLock<T>>> for ArcRwLock<T> {
         Self(value)
     }
 }
+
+#[derive(Derivative, Debug)]
+#[derivative(Clone(bound = ""))]
+pub struct RwFuture<T: Send + Sync + 'static>(pub RwFutureInner<T>);
+
+impl<T: Send + Sync + 'static> RwFuture<T> {
+    /// Creates a new `RwFuture` which will hold the output of the given future.
+    pub fn new<F: Future<Output = T> + Send + 'static>(fut: F) -> Self {
+        Self(RwFutureInner::new(fut))
+    }
+}
+
+/// Helper type to make [`RwFuture`] work with the [`lock`] macro. Typically doesn't need to be interacted with directly.
+#[derive(Derivative, Debug)]
+#[derivative(Clone(bound = ""))]
+pub struct RwFutureInner<T: Send + Sync + 'static>(Arc<tokio::sync::RwLock<RwFutureData<T>>>);
+
+#[derive(Debug)]
+enum RwFutureData<T: Send + Sync> {
+    Pending(tokio::sync::broadcast::Sender<()>),
+    Ready(T),
+}
+
+impl<T: Send + Sync> RwFutureData<T> {
+    fn unwrap(&self) -> &T {
+        match self {
+            RwFutureData::Pending(_) => panic!("not ready"),
+            RwFutureData::Ready(value) => value,
+        }
+    }
+
+    fn unwrap_mut(&mut self) -> &mut T {
+        match self {
+            RwFutureData::Pending(_) => panic!("not ready"),
+            RwFutureData::Ready(value) => value,
+        }
+    }
+}
+
+impl<T: Send + Sync + 'static> RwFutureInner<T> {
+    fn new<F: Future<Output = T> + Send + 'static>(fut: F) -> Self {
+        let (tx, _) = tokio::sync::broadcast::channel(1);
+        let data = Arc::new(tokio::sync::RwLock::new(RwFutureData::Pending(tx.clone())));
+        let data_clone = data.clone();
+        tokio::spawn(async move {
+            let value = fut.await;
+            *data_clone.write().await = RwFutureData::Ready(value);
+            let _ = tx.send(()); // an error just means no one's listening, which is fine
+        });
+        Self(data)
+    }
+
+    /// Waits until the value is available, then locks this `RwFuture` for read access.
+    pub async fn read(&self) -> tokio::sync::RwLockReadGuard<'_, T> {
+        let mut rx = {
+            let data = self.0.read().await;
+            match *data {
+                RwFutureData::Pending(ref tx) => tx.subscribe(),
+                RwFutureData::Ready(_) => return tokio::sync::RwLockReadGuard::map(data, RwFutureData::unwrap),
+            }
+        };
+        let () = rx.recv().await.expect("RwFuture notifier dropped");
+        let data = self.0.read().await;
+        match *data {
+            RwFutureData::Pending(_) => unreachable!("RwFuture should be ready after notification"),
+            RwFutureData::Ready(_) => tokio::sync::RwLockReadGuard::map(data, RwFutureData::unwrap),
+        }
+    }
+
+    /// Waits until the value is available, then locks this `RwFuture` for write access.
+    pub async fn write(&self) -> tokio::sync::RwLockMappedWriteGuard<'_, T> {
+        let mut rx = {
+            let data = self.0.write().await;
+            match *data {
+                RwFutureData::Pending(ref tx) => tx.subscribe(),
+                RwFutureData::Ready(_) => return tokio::sync::RwLockWriteGuard::map(data, RwFutureData::unwrap_mut),
+            }
+        };
+        let () = rx.recv().await.expect("RwFuture notifier dropped");
+        let data = self.0.write().await;
+        match *data {
+            RwFutureData::Pending(_) => unreachable!("RwFuture should be ready after notification"),
+            RwFutureData::Ready(_) => tokio::sync::RwLockWriteGuard::map(data, RwFutureData::unwrap_mut),
+        }
+    }
+}
+
+impl<T: Send + Sync + Default> Default for RwFuture<T> {
+    fn default() -> Self {
+        Self(RwFutureInner(Arc::new(tokio::sync::RwLock::new(RwFutureData::Ready(T::default())))))
+    }
+}
