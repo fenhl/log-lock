@@ -4,6 +4,7 @@
 
 use {
     std::sync::Arc,
+    dashmap::DashMap,
     derivative::Derivative,
 };
 
@@ -16,25 +17,34 @@ use {
         #[allow(unused_macros, unused_mut, unused_qualifications)] {
             let ctx = $ctx;
             std::println!("[{ctx}] acquiring mutex guard");
-            let mut guard_fut = std::pin::pin!($mutex.0.lock());
+            let mutex = &$mutex;
+            let mut guard_fut = std::pin::pin!(mutex.inner.lock());
             let mut $guard = tokio::select! {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
-                    std::eprintln!("[{ctx}] warning: acquiring mutex guard taking over a minute");
+                    std::eprintln!("[{ctx}] warning: acquiring mutex guard taking over a minute, held by:");
+                    for (ctx, count) in &mutex.locked_by {
+                        if count > 0 {
+                            println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
+                        }
+                    }
                     guard_fut.await
                 }
             };
+            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
             std::println!("[{ctx}] acquired mutex guard");
 
             macro_rules! unlock {
                 () => {
                     std::println!("[{ctx}] dropping mutex guard");
+                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
             std::println!("[{ctx}] dropping mutex guard");
+            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -46,18 +56,22 @@ use {
         #[allow(unused_macros, unused_mut, unused_qualifications)] {
             let ctx = $ctx;
             std::println!("[{ctx}] synchronously acquiring mutex guard");
-            let mut $guard = $mutex.0.blocking_lock();
+            let mutex = &$mutex;
+            let mut $guard = mutex.inner.blocking_lock();
+            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
             std::println!("[{ctx}] synchronously acquired mutex guard");
 
             macro_rules! unlock {
                 () => {
                     std::println!("[{ctx}] dropping mutex guard");
+                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
             std::println!("[{ctx}] dropping mutex guard");
+            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -70,23 +84,31 @@ use {
             let ctx = $ctx;
             std::println!("[{ctx}] acquiring parking_lot mutex guard");
             let mutex = &$mutex;
-            let mut $guard = if let Some(guard) = mutex.0.try_lock_for(std::time::Duration::from_secs(60)) {
+            let mut $guard = if let Some(guard) = mutex.inner.try_lock_for(std::time::Duration::from_secs(60)) {
                 guard
             } else {
-                std::eprintln!("[{ctx}] warning: acquiring parking_lot mutex guard taking over a minute");
-                mutex.0.lock()
+                std::eprintln!("[{ctx}] warning: acquiring parking_lot mutex guard taking over a minute, held by:");
+                for (ctx, count) in &mutex.locked_by {
+                    if count > 0 {
+                        println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
+                    }
+                }
+                mutex.inner.lock()
             };
+            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
             std::println!("[{ctx}] acquired parking_lot mutex guard");
 
             macro_rules! unlock {
                 () => {
                     std::println!("[{ctx}] dropping parking_lot mutex guard");
+                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
             std::println!("[{ctx}] dropping parking_lot mutex guard");
+            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -98,25 +120,34 @@ use {
         #[allow(unused_macros, unused_mut, unused_qualifications)] {
             let ctx = $ctx;
             std::println!("[{ctx}] acquiring RwLock read guard");
-            let mut guard_fut = std::pin::pin!($mutex.0.read());
+            let mutex = &$mutex;
+            let mut guard_fut = std::pin::pin!(mutex.inner.read());
             let mut $guard = tokio::select! {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
-                    std::eprintln!("[{ctx}] warning: acquiring RwLock read guard taking over a minute");
+                    std::eprintln!("[{ctx}] warning: acquiring RwLock read guard taking over a minute, held by:");
+                    for (ctx, count) in &mutex.locked_by {
+                        if count > 0 {
+                            println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
+                        }
+                    }
                     guard_fut.await
                 }
             };
+            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
             std::println!("[{ctx}] acquired RwLock read guard");
 
             macro_rules! unlock {
                 () => {
                     std::println!("[{ctx}] dropping RwLock read guard");
+                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
             std::println!("[{ctx}] dropping RwLock read guard");
+            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -134,18 +165,22 @@ use {
         #[allow(unused_macros, unused_mut, unused_qualifications)] {
             let ctx = $ctx;
             std::println!("[{ctx}] synchronously acquiring RwLock read guard");
-            let mut $guard = $mutex.0.blocking_read();
+            let mutex = &$mutex;
+            let mut $guard = mutex.inner.blocking_read();
+            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
             std::println!("[{ctx}] synchronously acquired RwLock read guard");
 
             macro_rules! unlock {
                 () => {
                     std::println!("[{ctx}] dropping RwLock read guard");
+                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
             std::println!("[{ctx}] dropping RwLock read guard");
+            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -157,25 +192,34 @@ use {
         #[allow(unused_macros, unused_mut, unused_qualifications)] {
             let ctx = $ctx;
             std::println!("[{ctx}] acquiring RwLock write guard");
-            let mut guard_fut = std::pin::pin!($mutex.0.write());
+            let mutex = &$mutex;
+            let mut guard_fut = std::pin::pin!(mutex.inner.write());
             let mut $guard = tokio::select! {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
-                    std::eprintln!("[{ctx}] warning: acquiring RwLock write guard taking over a minute");
+                    std::eprintln!("[{ctx}] warning: acquiring RwLock write guard taking over a minute, held by:");
+                    for (ctx, count) in &mutex.locked_by {
+                        if count > 0 {
+                            println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
+                        }
+                    }
                     guard_fut.await
                 }
             };
+            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
             std::println!("[{ctx}] acquired RwLock write guard");
 
             macro_rules! unlock {
                 () => {
                     std::println!("[{ctx}] dropping RwLock write guard");
+                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
             std::println!("[{ctx}] dropping RwLock write guard");
+            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -193,18 +237,22 @@ use {
         #[allow(unused_macros, unused_mut, unused_qualifications)] {
             let ctx = $ctx;
             std::println!("[{ctx}] synchronously acquiring RwLock write guard");
-            let mut $guard = $mutex.0.blocking_write();
+            let mutex = &$mutex;
+            let mut $guard = mutex.inner.blocking_write();
+            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
             std::println!("[{ctx}] synchronously acquired RwLock write guard");
 
             macro_rules! unlock {
                 () => {
                     std::println!("[{ctx}] dropping RwLock write guard");
+                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
             std::println!("[{ctx}] dropping RwLock write guard");
+            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -221,25 +269,34 @@ use {
     (@write @owned $guard:ident = $mutex:expr; $ctx:expr; $expr:expr) => {{
         #[allow(unused_macros, unused_mut, unused_qualifications)] {
             std::println!("[{ctx}] acquiring owned RwLock write guard");
-            let mut guard_fut = std::pin::pin!($mutex.0.write_owned());
+            let mutex = &$mutex;
+            let mut guard_fut = std::pin::pin!(mutex.inner.write_owned());
             let mut $guard = tokio::select! {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
-                    std::eprintln!("[{ctx}] warning: acquiring owned RwLock write guard taking over a minute");
+                    std::eprintln!("[{ctx}] warning: acquiring owned RwLock write guard taking over a minute, held by:");
+                    for (ctx, count) in &mutex.locked_by {
+                        if count > 0 {
+                            println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
+                        }
+                    }
                     guard_fut.await
                 }
             };
+            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
             std::println!("[{ctx}] acquired owned RwLock write guard");
 
             macro_rules! unlock {
                 () => {
                     std::println!("[{ctx}] dropping owned RwLock write guard");
+                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
             std::println!("[{ctx}] dropping owned RwLock write guard");
+            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -254,22 +311,31 @@ use {
     ($guard:ident = $mutex:expr; $ctx:expr; $expr:expr) => {{
         #[allow(unused_macros, unused_mut, unused_qualifications)] {
             let ctx = $ctx;
-            let mut guard_fut = std::pin::pin!($mutex.0.lock());
+            let mutex = &$mutex;
+            let mut guard_fut = std::pin::pin!(mutex.inner.lock());
             let mut $guard = tokio::select! {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
-                    std::eprintln!("[{ctx}] warning: acquiring mutex guard taking over a minute");
+                    std::eprintln!("[{ctx}] warning: acquiring mutex guard taking over a minute, held by:");
+                    for (ctx, count) in &mutex.locked_by {
+                        if count > 0 {
+                            println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
+                        }
+                    }
                     guard_fut.await
                 }
             };
+            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
 
             macro_rules! unlock {
                 () => {
+                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
+            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -280,15 +346,19 @@ use {
     (@blocking $guard:ident = $mutex:expr; $ctx:expr; $expr:expr) => {{
         #[allow(unused_macros, unused_mut, unused_qualifications)] {
             let _ = $ctx;
-            let mut $guard = $mutex.0.blocking_lock();
+            let mutex = &$mutex;
+            let mut $guard = mutex.inner.blocking_lock();
+            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
 
             macro_rules! unlock {
                 () => {
+                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
+            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -300,20 +370,28 @@ use {
         #[allow(unused_macros, unused_mut, unused_qualifications)] {
             let ctx = $ctx;
             let mutex = &$mutex;
-            let mut $guard = if let Some(guard) = mutex.0.try_lock_for(std::time::Duration::from_secs(60)) {
+            let mut $guard = if let Some(guard) = mutex.inner.try_lock_for(std::time::Duration::from_secs(60)) {
                 guard
             } else {
-                std::eprintln!("[{ctx}] warning: acquiring parking_lot mutex guard taking over a minute");
-                mutex.0.lock()
+                std::eprintln!("[{ctx}] warning: acquiring parking_lot mutex guard taking over a minute, held by:");
+                for (ctx, count) in &mutex.locked_by {
+                    if count > 0 {
+                        println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
+                    }
+                }
+                mutex.inner.lock()
             };
+            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
 
             macro_rules! unlock {
                 () => {
+                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
+            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -324,22 +402,31 @@ use {
     (@read $guard:ident = $mutex:expr; $ctx:expr; $expr:expr) => {{
         #[allow(unused_macros, unused_mut, unused_qualifications)] {
             let ctx = $ctx;
-            let mut guard_fut = std::pin::pin!($mutex.0.read());
+            let mutex = &$mutex;
+            let mut guard_fut = std::pin::pin!(mutex.inner.read());
             let mut $guard = tokio::select! {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
-                    std::eprintln!("[{ctx}] warning: acquiring RwLock read guard taking over a minute");
+                    std::eprintln!("[{ctx}] warning: acquiring RwLock read guard taking over a minute, held by:");
+                    for (ctx, count) in &mutex.locked_by {
+                        if count > 0 {
+                            println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
+                        }
+                    }
                     guard_fut.await
                 }
             };
+            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
 
             macro_rules! unlock {
                 () => {
+                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
+            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -356,15 +443,19 @@ use {
     (@blocking @read $guard:ident = $mutex:expr; $ctx:expr; $expr:expr) => {{
         #[allow(unused_macros, unused_mut, unused_qualifications)] {
             let _ = $ctx;
-            let mut $guard = $mutex.0.blocking_read();
+            let mutex = &$mutex;
+            let mut $guard = mutex.inner.blocking_read();
+            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
 
             macro_rules! unlock {
                 () => {
+                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
+            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -375,22 +466,31 @@ use {
     (@write $guard:ident = $mutex:expr; $ctx:expr; $expr:expr) => {{
         #[allow(unused_macros, unused_mut, unused_qualifications)] {
             let ctx = $ctx;
-            let mut guard_fut = std::pin::pin!($mutex.0.write());
+            let mutex = &$mutex;
+            let mut guard_fut = std::pin::pin!(mutex.inner.write());
             let mut $guard = tokio::select! {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
-                    std::eprintln!("[{ctx}] warning: acquiring RwLock write guard taking over a minute");
+                    std::eprintln!("[{ctx}] warning: acquiring RwLock write guard taking over a minute, held by:");
+                    for (ctx, count) in &mutex.locked_by {
+                        if count > 0 {
+                            println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
+                        }
+                    }
                     guard_fut.await
                 }
             };
+            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
 
             macro_rules! unlock {
                 () => {
+                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
+            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -407,15 +507,19 @@ use {
     (@blocking @write $guard:ident = $mutex:expr; $ctx:expr; $expr:expr) => {{
         #[allow(unused_macros, unused_mut, unused_qualifications)] {
             let _ = $ctx;
-            let mut $guard = $mutex.0.blocking_write();
+            let mutex = &$mutex;
+            let mut $guard = mutex.inner.blocking_write();
+            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
 
             macro_rules! unlock {
                 () => {
+                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
+            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -432,22 +536,31 @@ use {
     (@write @owned $guard:ident = $mutex:expr; $ctx:expr; $expr:expr) => {{
         #[allow(unused_macros, unused_mut, unused_qualifications)] {
             let ctx = $ctx;
-            let mut guard_fut = std::pin::pin!($mutex.0.write_owned());
+            let mutex = &$mutex;
+            let mut guard_fut = std::pin::pin!(mutex.inner.write_owned());
             let mut $guard = tokio::select! {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
-                    std::eprintln!("[{ctx}] warning: acquiring owned RwLock write guard taking over a minute");
+                    std::eprintln!("[{ctx}] warning: acquiring owned RwLock write guard taking over a minute, held by:");
+                    for (ctx, count) in &mutex.locked_by {
+                        if count > 0 {
+                            println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
+                        }
+                    }
                     guard_fut.await
                 }
             };
+            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
 
             macro_rules! unlock {
                 () => {
+                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
+            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -455,64 +568,94 @@ use {
 }
 
 #[derive(Debug, Default)]
-pub struct Mutex<T: ?Sized>(pub tokio::sync::Mutex<T>);
+pub struct Mutex<T: ?Sized> {
+    pub locked_by: DashMap<String, usize>,
+    pub inner: tokio::sync::Mutex<T>,
+}
 
 impl<T> Mutex<T> {
     pub fn new(t: T) -> Self {
-        Self(tokio::sync::Mutex::new(t))
+        Self {
+            locked_by: DashMap::default(),
+            inner: tokio::sync::Mutex::new(t),
+        }
     }
 
     pub fn into_inner(self) -> T {
-        self.0.into_inner()
+        self.inner.into_inner()
     }
 }
 
 #[derive(Debug, Default)]
-pub struct ParkingLotMutex<T: ?Sized>(pub parking_lot::Mutex<T>);
+pub struct ParkingLotMutex<T: ?Sized> {
+    pub locked_by: DashMap<String, usize>,
+    pub inner: parking_lot::Mutex<T>,
+}
 
 impl<T> ParkingLotMutex<T> {
     pub fn new(t: T) -> Self {
-        Self(parking_lot::Mutex::new(t))
+        Self {
+            locked_by: DashMap::default(),
+            inner: parking_lot::Mutex::new(t),
+        }
     }
 
     pub fn into_inner(self) -> T {
-        self.0.into_inner()
+        self.inner.into_inner()
     }
 }
 
 #[derive(Debug, Default)]
-pub struct RwLock<T: ?Sized>(pub tokio::sync::RwLock<T>);
+pub struct RwLock<T: ?Sized> {
+    pub locked_by: DashMap<String, usize>,
+    pub inner: tokio::sync::RwLock<T>,
+}
 
 impl<T> RwLock<T> {
     pub fn new(t: T) -> Self {
-        Self(tokio::sync::RwLock::new(t))
+        Self {
+            locked_by: DashMap::default(),
+            inner: tokio::sync::RwLock::new(t),
+        }
     }
 }
 
 #[derive(Derivative, Debug, Default)]
 #[derivative(Clone(bound = ""))]
-pub struct ArcRwLock<T: ?Sized>(pub Arc<tokio::sync::RwLock<T>>);
+pub struct ArcRwLock<T: ?Sized> {
+    pub locked_by: DashMap<String, usize>,
+    pub inner: Arc<tokio::sync::RwLock<T>>,
+}
 
 impl<T> ArcRwLock<T> {
     pub fn new(t: T) -> Self {
-        Self(Arc::new(tokio::sync::RwLock::new(t)))
+        Self {
+            locked_by: DashMap::default(),
+            inner: Arc::new(tokio::sync::RwLock::new(t)),
+        }
     }
 }
 
 impl<T> From<Arc<tokio::sync::RwLock<T>>> for ArcRwLock<T> {
-    fn from(value: Arc<tokio::sync::RwLock<T>>) -> Self {
-        Self(value)
+    fn from(inner: Arc<tokio::sync::RwLock<T>>) -> Self {
+        Self { locked_by: DashMap::default(), inner }
     }
 }
 
 #[derive(Derivative, Debug)]
 #[derivative(Clone(bound = ""))]
-pub struct RwFuture<T: Send + Sync + 'static>(pub RwFutureInner<T>);
+pub struct RwFuture<T: Send + Sync + 'static> {
+    pub locked_by: DashMap<String, usize>,
+    pub inner: RwFutureInner<T>,
+}
 
 impl<T: Send + Sync + 'static> RwFuture<T> {
     /// Creates a new `RwFuture` which will hold the output of the given future.
     pub fn new<F: Future<Output = T> + Send + 'static>(fut: F) -> Self {
-        Self(RwFutureInner::new(fut))
+        Self {
+            locked_by: DashMap::default(),
+            inner: RwFutureInner::new(fut),
+        }
     }
 }
 
@@ -593,6 +736,9 @@ impl<T: Send + Sync + 'static> RwFutureInner<T> {
 
 impl<T: Send + Sync + Default> Default for RwFuture<T> {
     fn default() -> Self {
-        Self(RwFutureInner(Arc::new(tokio::sync::RwLock::new(RwFutureData::Ready(T::default())))))
+        Self {
+            locked_by: DashMap::default(),
+            inner: RwFutureInner(Arc::new(tokio::sync::RwLock::new(RwFutureData::Ready(T::default())))),
+        }
     }
 }
