@@ -22,7 +22,7 @@ use {
                     for entry in &mutex.locked_by {
                         let (ctx, count) = entry.pair();
                         if *count > 0 {
-                            println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
+                            println!(" {}{ctx}", if *count > 1 { format!("({count}x) ") } else { String::default() });
                         }
                     }
                     guard_fut.await
@@ -88,7 +88,7 @@ use {
                 for entry in &mutex.locked_by {
                     let (ctx, count) = entry.pair();
                     if *count > 0 {
-                        println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
+                        println!(" {}{ctx}", if *count > 1 { format!("({count}x) ") } else { String::default() });
                     }
                 }
                 mutex.inner.lock()
@@ -127,7 +127,7 @@ use {
                     for entry in &mutex.locked_by {
                         let (ctx, count) = entry.pair();
                         if *count > 0 {
-                            println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
+                            println!(" {}{ctx}", if *count > 1 { format!("({count}x) ") } else { String::default() });
                         }
                     }
                     guard_fut.await
@@ -200,7 +200,7 @@ use {
                     for entry in &mutex.locked_by {
                         let (ctx, count) = entry.pair();
                         if *count > 0 {
-                            println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
+                            println!(" {}{ctx}", if *count > 1 { format!("({count}x) ") } else { String::default() });
                         }
                     }
                     guard_fut.await
@@ -278,7 +278,7 @@ use {
                     for entry in &mutex.locked_by {
                         let (ctx, count) = entry.pair();
                         if *count > 0 {
-                            println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
+                            println!(" {}{ctx}", if *count > 1 { format!("({count}x) ") } else { String::default() });
                         }
                     }
                     guard_fut.await
@@ -321,7 +321,7 @@ use {
                     for entry in &mutex.locked_by {
                         let (ctx, count) = entry.pair();
                         if *count > 0 {
-                            println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
+                            println!(" {}{ctx}", if *count > 1 { format!("({count}x) ") } else { String::default() });
                         }
                     }
                     guard_fut.await
@@ -379,7 +379,7 @@ use {
                 for entry in &mutex.locked_by {
                     let (ctx, count) = entry.pair();
                     if *count > 0 {
-                        println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
+                        println!(" {}{ctx}", if *count > 1 { format!("({count}x) ") } else { String::default() });
                     }
                 }
                 mutex.inner.lock()
@@ -414,7 +414,7 @@ use {
                     for entry in &mutex.locked_by {
                         let (ctx, count) = entry.pair();
                         if *count > 0 {
-                            println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
+                            println!(" {}{ctx}", if *count > 1 { format!("({count}x) ") } else { String::default() });
                         }
                     }
                     guard_fut.await
@@ -479,7 +479,7 @@ use {
                     for entry in &mutex.locked_by {
                         let (ctx, count) = entry.pair();
                         if *count > 0 {
-                            println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
+                            println!(" {}{ctx}", if *count > 1 { format!("({count}x) ") } else { String::default() });
                         }
                     }
                     guard_fut.await
@@ -550,7 +550,7 @@ use {
                     for entry in &mutex.locked_by {
                         let (ctx, count) = entry.pair();
                         if *count > 0 {
-                            println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
+                            println!(" {}{ctx}", if *count > 1 { format!("({count}x) ") } else { String::default() });
                         }
                     }
                     guard_fut.await
