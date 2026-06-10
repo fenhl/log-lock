@@ -19,7 +19,8 @@ use {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
                     std::eprintln!("[{ctx}] warning: acquiring mutex guard taking over a minute, held by:");
-                    for (ctx, count) in &mutex.locked_by {
+                    for entry in &mutex.locked_by {
+                        let (ctx, count) = entry.pair();
                         if count > 0 {
                             println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
                         }
@@ -84,7 +85,8 @@ use {
                 guard
             } else {
                 std::eprintln!("[{ctx}] warning: acquiring parking_lot mutex guard taking over a minute, held by:");
-                for (ctx, count) in &mutex.locked_by {
+                for entry in &mutex.locked_by {
+                    let (ctx, count) = entry.pair();
                     if count > 0 {
                         println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
                     }
@@ -122,7 +124,8 @@ use {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
                     std::eprintln!("[{ctx}] warning: acquiring RwLock read guard taking over a minute, held by:");
-                    for (ctx, count) in &mutex.locked_by {
+                    for entry in &mutex.locked_by {
+                        let (ctx, count) = entry.pair();
                         if count > 0 {
                             println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
                         }
@@ -194,7 +197,8 @@ use {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
                     std::eprintln!("[{ctx}] warning: acquiring RwLock write guard taking over a minute, held by:");
-                    for (ctx, count) in &mutex.locked_by {
+                    for entry in &mutex.locked_by {
+                        let (ctx, count) = entry.pair();
                         if count > 0 {
                             println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
                         }
@@ -271,7 +275,8 @@ use {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
                     std::eprintln!("[{ctx}] warning: acquiring owned RwLock write guard taking over a minute, held by:");
-                    for (ctx, count) in &mutex.locked_by {
+                    for entry in &mutex.locked_by {
+                        let (ctx, count) = entry.pair();
                         if count > 0 {
                             println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
                         }
@@ -313,7 +318,8 @@ use {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
                     std::eprintln!("[{ctx}] warning: acquiring mutex guard taking over a minute, held by:");
-                    for (ctx, count) in &mutex.locked_by {
+                    for entry in &mutex.locked_by {
+                        let (ctx, count) = entry.pair();
                         if count > 0 {
                             println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
                         }
@@ -370,7 +376,8 @@ use {
                 guard
             } else {
                 std::eprintln!("[{ctx}] warning: acquiring parking_lot mutex guard taking over a minute, held by:");
-                for (ctx, count) in &mutex.locked_by {
+                for entry in &mutex.locked_by {
+                    let (ctx, count) = entry.pair();
                     if count > 0 {
                         println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
                     }
@@ -404,7 +411,8 @@ use {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
                     std::eprintln!("[{ctx}] warning: acquiring RwLock read guard taking over a minute, held by:");
-                    for (ctx, count) in &mutex.locked_by {
+                    for entry in &mutex.locked_by {
+                        let (ctx, count) = entry.pair();
                         if count > 0 {
                             println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
                         }
@@ -468,7 +476,8 @@ use {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
                     std::eprintln!("[{ctx}] warning: acquiring RwLock write guard taking over a minute, held by:");
-                    for (ctx, count) in &mutex.locked_by {
+                    for entry in &mutex.locked_by {
+                        let (ctx, count) = entry.pair();
                         if count > 0 {
                             println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
                         }
@@ -538,7 +547,8 @@ use {
                 guard = &mut guard_fut => guard,
                 () = tokio::time::sleep(std::time::Duration::from_secs(60)) => {
                     std::eprintln!("[{ctx}] warning: acquiring owned RwLock write guard taking over a minute, held by:");
-                    for (ctx, count) in &mutex.locked_by {
+                    for entry in &mutex.locked_by {
+                        let (ctx, count) = entry.pair();
                         if count > 0 {
                             println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
                         }
