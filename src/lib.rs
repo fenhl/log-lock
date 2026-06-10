@@ -27,20 +27,20 @@ use {
                     guard_fut.await
                 }
             };
-            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
             std::println!("[{ctx}] acquired mutex guard");
 
             macro_rules! unlock {
                 () => {
                     std::println!("[{ctx}] dropping mutex guard");
-                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+                    *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
             std::println!("[{ctx}] dropping mutex guard");
-            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -54,20 +54,20 @@ use {
             std::println!("[{ctx}] synchronously acquiring mutex guard");
             let mutex = &$mutex;
             let mut $guard = mutex.inner.blocking_lock();
-            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
             std::println!("[{ctx}] synchronously acquired mutex guard");
 
             macro_rules! unlock {
                 () => {
                     std::println!("[{ctx}] dropping mutex guard");
-                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+                    *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
             std::println!("[{ctx}] dropping mutex guard");
-            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -91,20 +91,20 @@ use {
                 }
                 mutex.inner.lock()
             };
-            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
             std::println!("[{ctx}] acquired parking_lot mutex guard");
 
             macro_rules! unlock {
                 () => {
                     std::println!("[{ctx}] dropping parking_lot mutex guard");
-                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+                    *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
             std::println!("[{ctx}] dropping parking_lot mutex guard");
-            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -130,20 +130,20 @@ use {
                     guard_fut.await
                 }
             };
-            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
             std::println!("[{ctx}] acquired RwLock read guard");
 
             macro_rules! unlock {
                 () => {
                     std::println!("[{ctx}] dropping RwLock read guard");
-                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+                    *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
             std::println!("[{ctx}] dropping RwLock read guard");
-            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -163,20 +163,20 @@ use {
             std::println!("[{ctx}] synchronously acquiring RwLock read guard");
             let mutex = &$mutex;
             let mut $guard = mutex.inner.blocking_read();
-            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
             std::println!("[{ctx}] synchronously acquired RwLock read guard");
 
             macro_rules! unlock {
                 () => {
                     std::println!("[{ctx}] dropping RwLock read guard");
-                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+                    *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
             std::println!("[{ctx}] dropping RwLock read guard");
-            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -202,20 +202,20 @@ use {
                     guard_fut.await
                 }
             };
-            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
             std::println!("[{ctx}] acquired RwLock write guard");
 
             macro_rules! unlock {
                 () => {
                     std::println!("[{ctx}] dropping RwLock write guard");
-                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+                    *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
             std::println!("[{ctx}] dropping RwLock write guard");
-            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -235,20 +235,20 @@ use {
             std::println!("[{ctx}] synchronously acquiring RwLock write guard");
             let mutex = &$mutex;
             let mut $guard = mutex.inner.blocking_write();
-            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
             std::println!("[{ctx}] synchronously acquired RwLock write guard");
 
             macro_rules! unlock {
                 () => {
                     std::println!("[{ctx}] dropping RwLock write guard");
-                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+                    *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
             std::println!("[{ctx}] dropping RwLock write guard");
-            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -279,20 +279,20 @@ use {
                     guard_fut.await
                 }
             };
-            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
             std::println!("[{ctx}] acquired owned RwLock write guard");
 
             macro_rules! unlock {
                 () => {
                     std::println!("[{ctx}] dropping owned RwLock write guard");
-                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+                    *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
             std::println!("[{ctx}] dropping owned RwLock write guard");
-            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -321,17 +321,17 @@ use {
                     guard_fut.await
                 }
             };
-            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
 
             macro_rules! unlock {
                 () => {
-                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+                    *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
-            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -344,17 +344,17 @@ use {
             let _ = $ctx;
             let mutex = &$mutex;
             let mut $guard = mutex.inner.blocking_lock();
-            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
 
             macro_rules! unlock {
                 () => {
-                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+                    *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
-            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -377,17 +377,17 @@ use {
                 }
                 mutex.inner.lock()
             };
-            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
 
             macro_rules! unlock {
                 () => {
-                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+                    *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
-            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -412,17 +412,17 @@ use {
                     guard_fut.await
                 }
             };
-            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
 
             macro_rules! unlock {
                 () => {
-                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+                    *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
-            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -441,17 +441,17 @@ use {
             let _ = $ctx;
             let mutex = &$mutex;
             let mut $guard = mutex.inner.blocking_read();
-            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
 
             macro_rules! unlock {
                 () => {
-                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+                    *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
-            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -476,17 +476,17 @@ use {
                     guard_fut.await
                 }
             };
-            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
 
             macro_rules! unlock {
                 () => {
-                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+                    *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
-            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -505,17 +505,17 @@ use {
             let _ = $ctx;
             let mutex = &$mutex;
             let mut $guard = mutex.inner.blocking_write();
-            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
 
             macro_rules! unlock {
                 () => {
-                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+                    *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
-            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
@@ -546,17 +546,17 @@ use {
                     guard_fut.await
                 }
             };
-            mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
 
             macro_rules! unlock {
                 () => {
-                    mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+                    *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
                     drop($guard);
                 }
             }
 
             let value = $expr;
-            mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
+            *mutex.locked_by.entry(ctx.to_string()).or_default() -= 1;
             drop($guard);
             value
         }
