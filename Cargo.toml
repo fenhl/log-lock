@@ -4,6 +4,16 @@ version = "0.3.0"
 edition = "2024"
 rust-version = "1.91" # nixpkgs stable
 
+[lints.rust]
+rust_2018_idioms = "deny"
+unsafe_code = "forbid"
+unused = "deny"
+unused_crate_dependencies = "deny"
+unused_import_braces = "deny"
+unused_lifetimes = "deny"
+unused_qualifications = "deny"
+warnings = "deny"
+
 [features]
 always-log = []
 
