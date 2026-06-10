@@ -21,7 +21,7 @@ use {
                     std::eprintln!("[{ctx}] warning: acquiring mutex guard taking over a minute, held by:");
                     for entry in &mutex.locked_by {
                         let (ctx, count) = entry.pair();
-                        if count > 0 {
+                        if *count > 0 {
                             println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
                         }
                     }
@@ -87,7 +87,7 @@ use {
                 std::eprintln!("[{ctx}] warning: acquiring parking_lot mutex guard taking over a minute, held by:");
                 for entry in &mutex.locked_by {
                     let (ctx, count) = entry.pair();
-                    if count > 0 {
+                    if *count > 0 {
                         println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
                     }
                 }
@@ -126,7 +126,7 @@ use {
                     std::eprintln!("[{ctx}] warning: acquiring RwLock read guard taking over a minute, held by:");
                     for entry in &mutex.locked_by {
                         let (ctx, count) = entry.pair();
-                        if count > 0 {
+                        if *count > 0 {
                             println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
                         }
                     }
@@ -199,7 +199,7 @@ use {
                     std::eprintln!("[{ctx}] warning: acquiring RwLock write guard taking over a minute, held by:");
                     for entry in &mutex.locked_by {
                         let (ctx, count) = entry.pair();
-                        if count > 0 {
+                        if *count > 0 {
                             println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
                         }
                     }
@@ -277,7 +277,7 @@ use {
                     std::eprintln!("[{ctx}] warning: acquiring owned RwLock write guard taking over a minute, held by:");
                     for entry in &mutex.locked_by {
                         let (ctx, count) = entry.pair();
-                        if count > 0 {
+                        if *count > 0 {
                             println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
                         }
                     }
@@ -320,7 +320,7 @@ use {
                     std::eprintln!("[{ctx}] warning: acquiring mutex guard taking over a minute, held by:");
                     for entry in &mutex.locked_by {
                         let (ctx, count) = entry.pair();
-                        if count > 0 {
+                        if *count > 0 {
                             println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
                         }
                     }
@@ -378,7 +378,7 @@ use {
                 std::eprintln!("[{ctx}] warning: acquiring parking_lot mutex guard taking over a minute, held by:");
                 for entry in &mutex.locked_by {
                     let (ctx, count) = entry.pair();
-                    if count > 0 {
+                    if *count > 0 {
                         println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
                     }
                 }
@@ -413,7 +413,7 @@ use {
                     std::eprintln!("[{ctx}] warning: acquiring RwLock read guard taking over a minute, held by:");
                     for entry in &mutex.locked_by {
                         let (ctx, count) = entry.pair();
-                        if count > 0 {
+                        if *count > 0 {
                             println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
                         }
                     }
@@ -478,7 +478,7 @@ use {
                     std::eprintln!("[{ctx}] warning: acquiring RwLock write guard taking over a minute, held by:");
                     for entry in &mutex.locked_by {
                         let (ctx, count) = entry.pair();
-                        if count > 0 {
+                        if *count > 0 {
                             println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
                         }
                     }
@@ -549,7 +549,7 @@ use {
                     std::eprintln!("[{ctx}] warning: acquiring owned RwLock write guard taking over a minute, held by:");
                     for entry in &mutex.locked_by {
                         let (ctx, count) = entry.pair();
-                        if count > 0 {
+                        if *count > 0 {
                             println!(" {}{ctx}", if count > 1 { format!("({count}x) ") } else { String::default() });
                         }
                     }
