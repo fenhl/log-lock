@@ -348,7 +348,7 @@ use {
     };
     (@blocking $guard:ident = $mutex:expr; $ctx:expr; $expr:expr) => {{
         #[allow(unused_macros, unused_mut, unused_qualifications)] {
-            let _ = $ctx;
+            let ctx = $ctx;
             let mutex = &$mutex;
             let mut $guard = mutex.inner.blocking_lock();
             *mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
@@ -447,7 +447,7 @@ use {
     };
     (@blocking @read $guard:ident = $mutex:expr; $ctx:expr; $expr:expr) => {{
         #[allow(unused_macros, unused_mut, unused_qualifications)] {
-            let _ = $ctx;
+            let ctx = $ctx;
             let mutex = &$mutex;
             let mut $guard = mutex.inner.blocking_read();
             *mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
@@ -512,7 +512,7 @@ use {
     };
     (@blocking @write $guard:ident = $mutex:expr; $ctx:expr; $expr:expr) => {{
         #[allow(unused_macros, unused_mut, unused_qualifications)] {
-            let _ = $ctx;
+            let ctx = $ctx;
             let mutex = &$mutex;
             let mut $guard = mutex.inner.blocking_write();
             *mutex.locked_by.entry(ctx.to_string()).or_default() += 1;
