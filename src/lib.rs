@@ -268,6 +268,7 @@ use {
     };
     (@write @owned $guard:ident = $mutex:expr; $ctx:expr; $expr:expr) => {{
         #[allow(unused_macros, unused_mut, unused_qualifications)] {
+            let ctx = $ctx;
             std::println!("[{ctx}] acquiring owned RwLock write guard");
             let mutex = &$mutex;
             let mut guard_fut = std::pin::pin!(mutex.inner.write_owned());
