@@ -15,10 +15,11 @@ unused_qualifications = "deny"
 warnings = "deny"
 
 [features]
-always-log = []
+always-log = [] # potentially very verbose
+held-by = ["dashmap"] # potential performance/memory impact
 
 [dependencies]
-dashmap = "6"
+dashmap = { version = "6", optional = true }
 derivative = "2"
 parking_lot = "0.12"
 tokio = { version = "1", features = ["macros", "rt", "sync", "time"] }
