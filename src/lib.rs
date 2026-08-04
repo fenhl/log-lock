@@ -1343,6 +1343,7 @@ pub struct Mutex<T: ?Sized> {
 }
 
 impl<T> Mutex<T> {
+    #[track_caller] // location of mutex definition is shown in tokio-console
     pub fn new(t: T) -> Self {
         Self {
             #[cfg(feature = "held-by")] locked_by: DashMap::default(),
@@ -1362,6 +1363,7 @@ pub struct ParkingLotMutex<T: ?Sized> {
 }
 
 impl<T> ParkingLotMutex<T> {
+    #[track_caller] // location of mutex definition is shown in tokio-console
     pub fn new(t: T) -> Self {
         Self {
             #[cfg(feature = "held-by")] locked_by: DashMap::default(),
@@ -1381,6 +1383,7 @@ pub struct RwLock<T: ?Sized> {
 }
 
 impl<T> RwLock<T> {
+    #[track_caller] // location of mutex definition is shown in tokio-console
     pub fn new(t: T) -> Self {
         Self {
             #[cfg(feature = "held-by")] locked_by: DashMap::default(),
@@ -1400,6 +1403,7 @@ pub struct ParkingLotRwLock<T: ?Sized> {
 }
 
 impl<T> ParkingLotRwLock<T> {
+    #[track_caller] // location of mutex definition is shown in tokio-console
     pub fn new(t: T) -> Self {
         Self {
             #[cfg(feature = "held-by")] locked_by: DashMap::default(),
@@ -1420,6 +1424,7 @@ pub struct ArcRwLock<T: ?Sized> {
 }
 
 impl<T> ArcRwLock<T> {
+    #[track_caller] // location of mutex definition is shown in tokio-console
     pub fn new(t: T) -> Self {
         Self {
             #[cfg(feature = "held-by")] locked_by: DashMap::default(),
@@ -1443,6 +1448,7 @@ pub struct RwFuture<T: Send + Sync + 'static> {
 
 impl<T: Send + Sync + 'static> RwFuture<T> {
     /// Creates a new `RwFuture` which will hold the output of the given future.
+    #[track_caller] // location of mutex definition is shown in tokio-console
     pub fn new<F: Future<Output = T> + Send + 'static>(fut: F) -> Self {
         Self {
             #[cfg(feature = "held-by")] locked_by: DashMap::default(),
@@ -1527,6 +1533,7 @@ impl<T: Send + Sync + 'static> RwFutureInner<T> {
 }
 
 impl<T: Send + Sync + Default> Default for RwFuture<T> {
+    #[track_caller] // location of mutex definition is shown in tokio-console
     fn default() -> Self {
         Self {
             #[cfg(feature = "held-by")] locked_by: DashMap::default(),
